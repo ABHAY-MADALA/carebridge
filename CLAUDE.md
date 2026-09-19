@@ -1,4 +1,4 @@
-# CareBridge
+# HealthThread
 
 The handoff notes, status board, architecture map and invariants for this project
 live in **[AGENTS.md](AGENTS.md)**. Read that file before making changes, and

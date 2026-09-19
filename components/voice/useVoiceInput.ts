@@ -144,7 +144,7 @@ export function useVoiceInput({
     recognition.onerror = (e) => {
       setError(
         e.error === "not-allowed"
-          ? "CareBridge needs permission to use the microphone. You can type instead."
+          ? "HealthThread needs permission to use the microphone. You can type instead."
           : "I did not catch that. Please try again, or type it instead.",
       );
       setRecording(false);

@@ -4,7 +4,7 @@ import { addDays, dateKey, startOfToday } from "@/lib/dates";
 /*
   Alex — the demo patient.
 
-  A judge should not have to wait 30 days to see CareBridge work, so the history
+  A judge should not have to wait 30 days to see HealthThread work, so the history
   is synthetic but deterministic: the same seed produces the same numbers on
   every machine and every run, which means the demo never surprises you.
 

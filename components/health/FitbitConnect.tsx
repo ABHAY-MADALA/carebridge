@@ -175,7 +175,7 @@ export function FitbitConnect() {
           </p>
           <p className="mt-2 text-sm text-muted">
             Add the Google Health client ID, client secret and the exact backend callback
-            URI to <code>.env.local</code>. CareBridge will not pretend to connect.
+            URI to <code>.env.local</code>. HealthThread will not pretend to connect.
           </p>
         </>
       )}

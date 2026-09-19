@@ -14,7 +14,7 @@ import { baseBodyLocation, preciseBodyLocation, type BodySurface } from "@/lib/b
 /*
   The drop-in replacement for the old 2D BodyMap everywhere the flagship
   experience is wanted (the dedicated Body Picture page, inline in "Tell
-  CareBridge," inline in Guided Check-In) — same {value, onChange} contract.
+  HealthThread," inline in Guided Check-In) — same {value, onChange} contract.
   QuickPhrases.tsx keeps the plain 2D BodyMap deliberately (a fast in-
   appointment tap, not the immersive flow).
 

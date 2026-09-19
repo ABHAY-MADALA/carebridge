@@ -11,7 +11,7 @@ import { useSpeaker } from "@/components/voice/useSpeaker";
 import { cn } from "@/lib/utils";
 
 /*
-  The doctor asks out loud; CareBridge answers as the patient.
+  The doctor asks out loud; HealthThread answers as the patient.
 
   Reading a summary aloud once is not enough for a nonspeaking patient, because
   the doctor immediately asks follow-up questions. This is the part that lets
@@ -80,7 +80,7 @@ export function VoiceAdvocate({
         Ask me a question
       </h2>
       <p className="mt-1 text-sm text-muted">
-        Speak your question and CareBridge will answer for me, using only what I have
+        Speak your question and HealthThread will answer for me, using only what I have
         recorded. If I have not recorded it, it will say so rather than guess.
       </p>
 

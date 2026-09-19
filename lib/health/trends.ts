@@ -11,7 +11,7 @@ import { METRICS, METRIC_ORDER } from "./metrics";
   Multi-signal change detection.
 
   The rule that matters: one number moving is NOT a change worth telling
-  someone about. People sleep badly for ordinary reasons. CareBridge speaks up
+  someone about. People sleep badly for ordinary reasons. HealthThread speaks up
   only when several parts of a person's health move away from their own
   baseline together, in the direction that means "worse".
 

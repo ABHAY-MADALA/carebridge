@@ -256,10 +256,10 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     return (
       <main className="mx-auto max-w-xl px-4 py-16">
         <section className="card p-6" role="alert">
-          <h1 className="text-2xl font-semibold">CareBridge could not open your profile</h1>
+          <h1 className="text-2xl font-semibold">HealthThread could not open your profile</h1>
           <p className="mt-2 text-muted">{error}</p>
           <p className="mt-2 text-sm text-muted">
-            CareBridge profiles run only on this computer. Open the app at localhost or
+            HealthThread profiles run only on this computer. Open the app at localhost or
             127.0.0.1, then try again.
           </p>
           <button
@@ -278,7 +278,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     return (
       <main className="mx-auto max-w-xl px-4 py-16" aria-busy="true">
         <div className="card p-6">
-          <p className="label">{switching ? "Switching profile" : "Opening CareBridge"}</p>
+          <p className="label">{switching ? "Switching profile" : "Opening HealthThread"}</p>
           <p className="mt-2 text-lg text-muted">
             {switching
               ? "Clearing the previous profile before loading the next one…"

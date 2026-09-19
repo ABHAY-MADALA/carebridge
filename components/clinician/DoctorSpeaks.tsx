@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 /*
   The doctor's side of the bridge.
 
-  The doctor talks normally; CareBridge rewrites it in plain language, speaks it
+  The doctor talks normally; HealthThread rewrites it in plain language, speaks it
   to the patient, and saves it to the timeline. The patient leaves with what was
   actually said instead of trying to remember it in the car park.
 
@@ -100,7 +100,7 @@ export function DoctorSpeaks({ speech }: { speech: ReturnType<typeof useSpeaker>
         For the doctor: explain something to me
       </h2>
       <p className="mt-1 text-sm text-muted">
-        Say what you would normally say. CareBridge will put it in plain words, read it to
+        Say what you would normally say. HealthThread will put it in plain words, read it to
         the patient, and save it so they do not have to remember it.
       </p>
 

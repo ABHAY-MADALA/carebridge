@@ -14,7 +14,7 @@ import { relativeDays } from "@/lib/dates";
   Answering a doctor's spoken question on behalf of a patient who cannot answer
   it themselves.
 
-  This is the highest-stakes surface in CareBridge, so it is the most tightly
+  This is the highest-stakes surface in HealthThread, so it is the most tightly
   constrained. The answer may only contain things that are in the record. If the
   record does not cover the question, the honest answer — "Alex hasn't recorded
   anything about that" — is the correct one, and it is always available because

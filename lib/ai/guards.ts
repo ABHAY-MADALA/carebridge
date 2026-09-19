@@ -26,7 +26,7 @@ const DIAGNOSTIC_PATTERNS: RegExp[] = [
 ];
 
 /*
-  CareBridge's own disclaimers talk ABOUT diagnosis in order to disclaim it, so
+  HealthThread's own disclaimers talk ABOUT diagnosis in order to disclaim it, so
   a naive scan flags our own safety text. These phrasings are stripped before
   scanning. Kept as an explicit short list rather than clever negative
   lookbehinds, because the next person to touch this needs to be able to see

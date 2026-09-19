@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /*
-  The single internal language of CareBridge.
+  The single internal language of HealthThread.
 
   Voice, text, the body map and the plain forms all converge on HealthEvent.
   Nothing downstream — timeline, baseline, trends, summary, clinician view —

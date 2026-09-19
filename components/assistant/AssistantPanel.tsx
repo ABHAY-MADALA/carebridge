@@ -20,9 +20,9 @@ import {
 } from "@/lib/backend/client";
 
 /*
-  The AI Health Assistant — the centre of CareBridge, not a chat bubble in a
+  The AI Health Assistant — the centre of HealthThread, not a chat bubble in a
   corner. The patient does not have to know where information belongs; they say
-  what is happening and CareBridge works out the rest, asking for anything it
+  what is happening and HealthThread works out the rest, asking for anything it
   genuinely needs and never filling in a blank on its own.
 */
 
@@ -226,7 +226,7 @@ export function AssistantPanel({
           ref={logRef}
           role="log"
           aria-live="polite"
-          aria-label="Conversation with CareBridge"
+          aria-label="Conversation with HealthThread"
           className="mt-5 max-h-80 space-y-3 overflow-y-auto pr-1"
         >
           {messages.map((m, i) => (

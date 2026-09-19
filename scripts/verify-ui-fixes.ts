@@ -105,7 +105,7 @@ assert.match(loader("const clock = new THREE__namespace.Clock();"), /TimerClock/
 assert.throws(() => loader("const clock = new THREE.Timer();"));
 
 for (const lang of ["en", "es"] as const) assert.ok(messages[lang].nav.guidedCheckIn);
-assert.equal(messages.en.nav.tell, "Tell CareBridge");
+assert.equal(messages.en.nav.tell, "Tell HealthThread");
 assert.equal(messages.en.nav.insights, "Health Changes");
 assert.equal(messages.en.nav.explain, "Help Me Explain");
 assert.equal(messages.en.bodyPicture.addToTimeline, "Add to Timeline");

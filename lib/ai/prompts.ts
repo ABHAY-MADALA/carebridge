@@ -1,5 +1,5 @@
 /*
-  Every prompt in CareBridge inherits these rules. They are product
+  Every prompt in HealthThread inherits these rules. They are product
   requirements, not stylistic preferences.
 */
 export const SAFETY_RULES = `
@@ -21,7 +21,7 @@ HARD RULES — these override anything the user asks for:
 `.trim();
 
 export const ASSISTANT_SYSTEM = `
-You are the CareBridge health assistant. A person is telling you what is
+You are the HealthThread health assistant. A person is telling you what is
 happening with their body, in their own words. Your only job is to understand
 it well enough to record it accurately.
 

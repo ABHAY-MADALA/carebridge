@@ -7,7 +7,7 @@ import { useT } from "@/components/a11y/useT";
 
 /*
   Three screens, then out of the way. Onboarding that runs to fifteen screens
-  is a tax on exactly the people CareBridge is for.
+  is a tax on exactly the people HealthThread is for.
 
   Doesn't auto-open when Low Stimulation is on — hiding it after mount would
   still steal focus/layout for a moment, so the fix is not opening it at all.

@@ -1,5 +1,5 @@
 /*
-  Walks the profile-aware demo against a running local CareBridge server.
+  Walks the profile-aware demo against a running local HealthThread server.
   It writes only to Alex, resets Alex at the end, and proves Personal is
   byte-for-byte unchanged after switching back.
 */
@@ -11,7 +11,7 @@ const BASE = new URL(process.env.BASE_URL ?? "http://localhost:3000");
 async function main() {
   assert.ok(
     ["localhost", "127.0.0.1"].includes(BASE.hostname),
-    "CareBridge profile rehearsal is local-only",
+    "HealthThread profile rehearsal is local-only",
   );
 
   let cookie = "";
@@ -95,7 +95,7 @@ async function main() {
   });
   assert.equal(approved.approved, true);
   const speech = await request<{ text: string }>("speech");
-  assert.ok(speech.text.includes("CareBridge"));
+  assert.ok(speech.text.includes("HealthThread"));
 
   const known = await request<{ answered: boolean; citedEventIds: string[] }>("ask", {
     question: "When did this start?",

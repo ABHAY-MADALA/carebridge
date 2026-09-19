@@ -1,5 +1,5 @@
 /*
-  Sanity check for the parts of CareBridge that must not be wrong: the seeded
+  Sanity check for the parts of HealthThread that must not be wrong: the seeded
   patient, the cycle-aware baseline, and multi-signal detection.
 
   Run with: npx tsx scripts/verify-engine.ts

@@ -66,7 +66,7 @@ export function ProfileControls() {
         <h2 className="text-lg font-semibold text-ink">AI privacy</h2>
         <p className="mt-1 text-sm text-muted">
           {profile.synthetic
-            ? "Alex always uses CareBridge's offline deterministic assistant. Demo records are never sent to an external AI provider."
+            ? "Alex always uses HealthThread's offline deterministic assistant. Demo records are never sent to an external AI provider."
             : "By default, Personal uses the offline deterministic assistant. You can opt in to the configured external AI provider for more natural wording."}
         </p>
         <label className="mt-4 flex items-center gap-3">

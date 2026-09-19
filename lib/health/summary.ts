@@ -191,7 +191,7 @@ export function summaryToText(summary: DoctorSummary, opts: { intro?: boolean } 
 
   if (opts.intro) {
     parts.push(
-      "Hello. I use CareBridge to help me communicate my health information. Here is what has been happening.",
+      "Hello. I use HealthThread to help me communicate my health information. Here is what has been happening.",
     );
   }
 
@@ -201,7 +201,7 @@ export function summaryToText(summary: DoctorSummary, opts: { intro?: boolean } 
   }
 
   parts.push(
-    "This information was recorded by me over time and organized by CareBridge. It is not a diagnosis.",
+    "This information was recorded by me over time and organized by HealthThread. It is not a diagnosis.",
   );
 
   return parts.join("\n\n");

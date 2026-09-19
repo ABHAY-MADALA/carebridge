@@ -6,7 +6,7 @@ import type { AssistantTurn, Category, DraftEvent, TrendHint } from "@/lib/schem
   This runs whenever the language model is unavailable: no key, no network,
   rate limited, timed out, or it returned something that failed validation.
   It is not a degraded placeholder — it is expected to carry a live demo, so it
-  handles the realistic phrasings of the scenarios CareBridge is built for.
+  handles the realistic phrasings of the scenarios HealthThread is built for.
 
   It obeys the same rules as the model. In particular it will NOT turn "it
   hurts a lot" into a 7. Vague intensity words are not numbers, and guessing
@@ -358,7 +358,7 @@ export function extractDrafts(text: string): DraftEvent[] {
 
   Everything else needs only ONE meaningful detail. Someone who says "I get
   tired around 3 PM" has already told us something useful; interrogating them
-  for a 0-10 number they did not volunteer is exactly the friction CareBridge
+  for a 0-10 number they did not volunteer is exactly the friction HealthThread
   exists to remove.
 */
 const REQUIRED_ALL: Partial<Record<Category, (keyof DraftEvent)[]>> = {

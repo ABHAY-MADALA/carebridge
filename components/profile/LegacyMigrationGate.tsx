@@ -182,7 +182,7 @@ export function LegacyMigrationGate({
         <p className="label">One-time review</p>
         <h1 className="mt-1 text-2xl font-semibold">Review existing browser data</h1>
         <p className="mt-2 text-muted">
-          CareBridge found records from the earlier single-profile version. It will not
+          HealthThread found records from the earlier single-profile version. It will not
           guess who they belong to. Nothing is moved or deleted until you choose.
         </p>
 
@@ -260,7 +260,7 @@ export function LegacyMigrationGate({
               {snapshot.legacyFitbitMetrics.length === 1 ? "" : "s"} will not be imported.
             </p>
             <p className="mt-1 text-sm text-muted">
-              Reconnect the real Fitbit account in Personal. CareBridge will never copy
+              Reconnect the real Fitbit account in Personal. HealthThread will never copy
               old wearable rows into Alex or present them as newly authorized data.
             </p>
           </div>

@@ -80,7 +80,7 @@ export async function handleBackend(req: Request, path: string[], database?: Bac
       if (req.headers.get("accept")?.includes("text/html")) {
         return NextResponse.redirect(new URL("/my-health?fitbit=connected", req.url), 303);
       }
-      return json({ userId: session.userId, connected: true, message: "Fitbit authorized. Return to CareBridge to sync." }, 200, session);
+      return json({ userId: session.userId, connected: true, message: "Fitbit authorized. Return to HealthThread to sync." }, 200, session);
     }
     if (req.headers.get("x-carebridge-context") !== contextKey(session)) throw new BackendError(409, "profile-context-required-or-stale");
     if (endpoint === "profile" && req.method === "POST") {

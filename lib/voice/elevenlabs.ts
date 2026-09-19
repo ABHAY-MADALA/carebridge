@@ -1,8 +1,8 @@
 /*
   ElevenLabs, server-side only.
 
-  One voice, everywhere — CareBridge speaking on the patient's behalf, or
-  reading their record aloud to a doctor, is still CareBridge, not a second
+  One voice, everywhere — HealthThread speaking on the patient's behalf, or
+  reading their record aloud to a doctor, is still HealthThread, not a second
   persona. `Speaker` is kept as a parameter through this file and its callers
   so the shape doesn't have to change again if a real second voice becomes
   useful later, but it no longer affects which voice is used.

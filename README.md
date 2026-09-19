@@ -1,8 +1,8 @@
-# CareBridge
+# HealthThread
 
 **An accessible AI health communication platform.** Patients explain what is
 happening however they can — speech, text, a body map, or plain forms —
-CareBridge organizes it into a health record, watches how it changes against
+HealthThread organizes it into a health record, watches how it changes against
 *their own* baseline, and helps them communicate that story to a doctor.
 
 Built for BayHacks. PMOS, a cycle-linked condition, is the demonstration case,
@@ -17,7 +17,7 @@ npm install
 npm run dev -- --hostname 127.0.0.1   # open http://localhost:3000
 ```
 
-CareBridge is local-only and uses a SQLite backend in `.carebridge-data`.
+HealthThread is local-only and uses a SQLite backend in `.carebridge-data`.
 **Abhay — Personal** starts empty. **Alex — Demo Patient** receives the
 deterministic 84-day, three-cycle synthetic history on the first Alex health
 read. Every health query and write is bound to the active server session/profile;
@@ -77,11 +77,11 @@ part.
 > language that isn't the clinic's, and nobody remembers three months of
 > symptoms in a five-minute appointment."
 
-**0:10 — Open CareBridge.** Start on **Abhay — Personal**. Open **My Health** and,
+**0:10 — Open HealthThread.** Start on **Abhay — Personal**. Open **My Health** and,
 if real OAuth has been completed, show the actual connected status, last sync
 timestamp and measurements.
 
-> "CareBridge can ingest real wearable information and build a personal health
+> "HealthThread can ingest real wearable information and build a personal health
 > history. This profile starts empty and only uses my own records."
 
 Use the profile switcher and choose **Alex — Demo Patient**. Point out the
@@ -90,7 +90,7 @@ persistent **Demo · Synthetic data** badge.
 > "For the demonstration we're switching to a synthetic patient so the scenario
 > is reproducible. These profiles are separated in the backend."
 
-Return to the home page. Point at **Tell CareBridge** filling the screen.
+Return to the home page. Point at **Tell HealthThread** filling the screen.
 
 > "This is the whole interface. You don't have to know where anything belongs."
 
@@ -98,7 +98,7 @@ Return to the home page. Point at **Tell CareBridge** filling the screen.
 
 > "My lower stomach has been hurting a lot today."
 
-CareBridge asks **how strong** it is. Say "about seven."
+HealthThread asks **how strong** it is. Say "about seven."
 
 > "Notice it asked. It did not turn 'a lot' into a 7 — it will not invent a
 > measurement I never gave it."
@@ -117,7 +117,7 @@ original words quoted underneath.
 
 **1:05 — The change.** Open **Health Changes**. The banner is showing.
 
-> "CareBridge noticed several things moved at once. It will not say this for one
+> "HealthThread noticed several things moved at once. It will not say this for one
 > number — sleep alone means nothing."
 
 **1:20 — Why.** Press **Why am I seeing this?**
@@ -133,7 +133,7 @@ with the patient's usual value beside the recent one.
 > "Here is the technical bit. Alex's pain is genuinely higher during the luteal
 > phase every single month. A flat 30-day average says 3.9; her actual luteal
 > baseline is 4.3. Comparing against the flat average would flag an ordinary
-> week as a change. CareBridge compares cycle phase against cycle phase."
+> week as a change. HealthThread compares cycle phase against cycle phase."
 
 **1:55 — Help Me Explain.** Press it, then **Write my summary**.
 
@@ -165,10 +165,10 @@ Tap a quick phrase — **Please slow down**.
 
 > "I want to rule out an ovarian cyst, so we'll order a pelvic ultrasound."
 
-CareBridge puts it in plain words, speaks it to the patient, and saves it to the
+HealthThread puts it in plain words, speaks it to the patient, and saves it to the
 timeline.
 
-> "CareBridge turns the way a patient can communicate into a health story their
+> "HealthThread turns the way a patient can communicate into a health story their
 > doctor can understand — and turns the doctor's answer back into something the
 > patient can keep."
 

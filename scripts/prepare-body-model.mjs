@@ -87,7 +87,7 @@ const buffers = [Buffer.from(positions.buffer), Buffer.from(normals.buffer), Buf
 const offsets = [0, buffers[0].length, buffers[0].length + buffers[1].length];
 const bin = Buffer.concat(buffers);
 const doc = {
-  asset: { version: "2.0", generator: "CareBridge model preparation", copyright: "MakeHuman graphical assets, CC0 1.0" },
+  asset: { version: "2.0", generator: "HealthThread model preparation", copyright: "MakeHuman graphical assets, CC0 1.0" },
   scene: 0, scenes: [{ nodes: [0] }], nodes: [{ name: "CareBridgeHuman", mesh: 0 }],
   meshes: [{ primitives: [{ attributes: { POSITION: 0, NORMAL: 1 }, indices: 2 }] }],
   buffers: [{ byteLength: bin.length }],

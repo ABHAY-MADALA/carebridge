@@ -1,4 +1,4 @@
-# CareBridge human model
+# HealthThread human model
 
 `carebridge-human.glb` is a local derivative of MakeHuman's hm08 base mesh and
 graphical morph targets. All source graphical assets are **CC0 1.0 Universal**.

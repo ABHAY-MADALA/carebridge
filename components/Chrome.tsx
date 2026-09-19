@@ -82,7 +82,7 @@ export function Chrome({ children }: { children: React.ReactNode }) {
           </main>
           <footer className="border-t border-line px-4 py-6 md:px-8 xl:px-10">
             <p className="max-w-3xl text-xs leading-relaxed text-muted">
-              CareBridge organizes what you record and compares it with your own past
+              HealthThread organizes what you record and compares it with your own past
               patterns. It does not diagnose conditions or give medical advice.
             </p>
           </footer>

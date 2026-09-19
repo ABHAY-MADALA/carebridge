@@ -6,7 +6,7 @@ import { useT } from "@/components/a11y/useT";
 /*
   A 0-10 scale with a face and a word on every step. A bare number line asks
   the patient to translate a feeling into maths; the faces and the words give
-  two other ways in, which is the entire point of CareBridge.
+  two other ways in, which is the entire point of HealthThread.
 */
 
 const FACES = [

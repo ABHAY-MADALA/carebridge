@@ -1,4 +1,4 @@
-# CareBridge — agent handoff
+# HealthThread — agent handoff
 
 **Read this first.** It is the context contract for whoever works on this next: a
 teammate, a future session, or another AI. It is updated at the end of every task,
@@ -8,7 +8,7 @@ so it should be accurate at whatever moment the previous session ended.
 
 ---
 
-## What CareBridge is
+## What HealthThread is
 
 Healthcare expects patients to know what information matters, how to describe it,
 and where to enter it. Many people can't: they lack the terminology, can't describe
@@ -16,7 +16,7 @@ a symptom, are nonspeaking, face a language barrier, aren't comfortable with
 technology, or simply can't remember three months of history in a five-minute
 appointment.
 
-CareBridge lets a patient communicate however they can — speech, text, a body map,
+HealthThread lets a patient communicate however they can — speech, text, a body map,
 or plain forms — converts that into structured health events, builds a timeline,
 compares recent data against **that person's own** past patterns, and then helps
 them communicate the result to a doctor: an editable summary, a clinician view, and
@@ -145,7 +145,7 @@ The production server is running on `127.0.0.1:3000`.
 | 5 | Baseline + multi-signal trend engine | done |
 | 6 | AI assistant (provider adapter, prompts, fallback, `/api/assistant`) | done |
 | 7 | ElevenLabs voice layer (`/api/speech`, `/api/transcribe`, `/api/voice-status`) | done |
-| 8 | Home — "Tell CareBridge" | done |
+| 8 | Home — "Tell HealthThread" | done |
 | 9 | Manual check-in + body map | done |
 | 10 | `/timeline` | done |
 | 11 | `/insights` — change banner, why, charts, phase comparison | done |
@@ -564,7 +564,7 @@ Everything is optional; see `.env.local.example`. What degrades without each:
 | `LLM_PROVIDER` + matching key | Assistant uses the rule-based parser; summaries use the deterministic builder; doctor Q&A uses the keyword matcher. Full demo still works. |
 | `ELEVENLABS_API_KEY` | Speech falls back to browser `SpeechSynthesis`; voice input falls back to `SpeechRecognition` (Chrome only). |
 | `ELEVENLABS_VOICE_ID` | A default voice is used. |
-| `ELEVENLABS_CLINICAL_VOICE_ID` | Recognized but unused — CareBridge uses one voice (`ELEVENLABS_VOICE_ID`) everywhere. |
+| `ELEVENLABS_CLINICAL_VOICE_ID` | Recognized but unused — HealthThread uses one voice (`ELEVENLABS_VOICE_ID`) everywhere. |
 | `GOOGLE_HEALTH_CLIENT_ID` / `GOOGLE_HEALTH_CLIENT_SECRET` / `CAREBRIDGE_FITBIT_REDIRECT_URI` | Personal shows "Setup required." Alex remains synthetic-only. |
 
 ## Hosting

@@ -4,7 +4,7 @@ import { METRIC_ORDER } from "./metrics";
 /*
   "What is normal for YOU?"
 
-  CareBridge never compares a patient against a generic person. It compares
+  HealthThread never compares a patient against a generic person. It compares
   them against their own history — and, because symptoms move with the
   menstrual cycle, against their own history IN THE SAME CYCLE PHASE.
 

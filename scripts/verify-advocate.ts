@@ -1,6 +1,6 @@
 /*
   The voice advocate answers a doctor on a patient's behalf, so its failure mode
-  matters more than anywhere else in CareBridge. These checks confirm that it
+  matters more than anywhere else in HealthThread. These checks confirm that it
   answers from the record when it can, and refuses when it cannot.
 
   Run with: npx tsx scripts/verify-advocate.ts

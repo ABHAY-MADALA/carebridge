@@ -1,5 +1,5 @@
 /*
-  The no-diagnosis guard. CareBridge may describe movement away from a baseline
+  The no-diagnosis guard. HealthThread may describe movement away from a baseline
   and nothing more, so this has to hold in both directions: block real
   diagnostic language, and do NOT block our own disclaimers about not
   diagnosing.
@@ -12,7 +12,7 @@ const CASES: [string, boolean][] = [
   // --- must be allowed -----------------------------------------------------
   ["It is not a diagnosis.", false],
   ["This information is not a diagnosis.", false],
-  ["CareBridge does not diagnose conditions or give medical advice.", false],
+  ["HealthThread does not diagnose conditions or give medical advice.", false],
   ["Your pain and fatigue have increased compared with your previous pattern.", false],
   ["Several health measurements have changed together.", false],
   ["Sleep went from 7h 20m to 5h 10m a night.", false],
