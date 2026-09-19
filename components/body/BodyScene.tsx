@@ -9,7 +9,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { Expand, Minimize, Minus, Mouse, PersonStanding, Plus, RotateCcw } from "lucide-react";
 import { useSettings } from "@/components/a11y/SettingsProvider";
 import { useT } from "@/components/a11y/useT";
-import { bodyRegionAt } from "@/lib/body/regions";
+import { bodyRegionAt, bodySurfaceAt, type BodySurface } from "@/lib/body/regions";
 
 // The local CC0 human is 1.8 units tall, faces +Z, and has patient-left at +X.
 const ANCHORS: Record<string, [number, number, number]> = {
@@ -39,7 +39,7 @@ const ANCHORS: Record<string, [number, number, number]> = {
   "Center lower back": [0, 1.10, -.10], "Left lower back": [.09, 1.10, -.10], "Right lower back": [-.09, 1.10, -.10],
 };
 
-type Props = { value: string | null; onChange: (id: string) => void; severity?: number | null };
+type Props = { value: string | null; onChange: (id: string, surface: BodySurface) => void; severity?: number | null };
 type View = "front" | "back" | "left" | "right";
 const ANGLES: Record<View, number> = { front: 0, back: Math.PI, left: Math.PI / 2, right: -Math.PI / 2 };
 
@@ -85,7 +85,8 @@ function Human({ value, onChange, marker, onMarker, dark, highContrast, onReady 
     event.stopPropagation();
     const local = event.object.worldToLocal(event.point.clone());
     onMarker(local);
-    onChange(bodyRegionAt(local, event.face?.normal.z ?? 1));
+    const normal = event.face?.normal ?? { x: 0, z: 1 };
+    onChange(bodyRegionAt(local, normal.z), bodySurfaceAt(normal));
   };
   return <group>
     <mesh geometry={geometry} material={material} onClick={select} />
@@ -100,7 +101,7 @@ function Human({ value, onChange, marker, onMarker, dark, highContrast, onReady 
           if (event.delta > 5) return;
           event.stopPropagation();
           onMarker(point.clone());
-          onChange(id);
+          onChange(id, side === 1 ? "left" : "right");
         }}
       ><sphereGeometry args={[.0125, 24, 16]} /></mesh>;
     })}
@@ -171,7 +172,7 @@ export function BodyScene({ value, onChange, severity = null }: Props) {
         <directionalLight position={[2.2, 1.2, 1]} color="#d4dbe5" intensity={.8} />
         <directionalLight position={[0, 3, -2]} color="#e6e3de" intensity={2.5} />
         <Suspense fallback={null}>
-          <Human value={value} onChange={(id) => { setPicked({ id, point: hit.current?.clone() ?? new Vector3(...ANCHORS[id]) }); onChange(id); }} marker={marker} onMarker={(p) => { hit.current = p; }} dark={dark} highContrast={settings.highContrast} onReady={() => setLoaded(true)} />
+          <Human value={value} onChange={(id, surface) => { const selectedSurface = view ?? surface; setPicked({ id, point: hit.current?.clone() ?? new Vector3(...ANCHORS[id]) }); onChange(id, selectedSurface); }} marker={marker} onMarker={(p) => { hit.current = p; }} dark={dark} highContrast={settings.highContrast} onReady={() => setLoaded(true)} />
         </Suspense>
         <OrbitControls ref={controls} target={[0, .9, 0]} enablePan={false} enableDamping={!settings.lowStimulation && !reducedMotion} dampingFactor={.12} minDistance={2.1} maxDistance={5.5} minPolarAngle={Math.PI / 3} maxPolarAngle={2 * Math.PI / 3} onStart={() => setView(null)} onEnd={() => { if (controls.current) { setZoom(controls.current.getDistance()); const angle = controls.current.getAzimuthalAngle(); setView((Object.keys(ANGLES) as View[]).find((v) => Math.abs(Math.atan2(Math.sin(angle - ANGLES[v]), Math.cos(angle - ANGLES[v]))) < .08) ?? null); } }} />
       </Canvas>

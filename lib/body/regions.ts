@@ -7,7 +7,8 @@
   HealthEvent.bodyLocation, so it stays English regardless of UI language.
 */
 
-export type BodyView = "front" | "back";
+export type BodySurface = "front" | "back" | "left" | "right";
+export type BodyView = Extract<BodySurface, "front" | "back">;
 
 export type BodyRegion = {
   id: string;
@@ -63,6 +64,38 @@ export const BODY_REGIONS: BodyRegion[] = [
   { id: "Left lower back", view: "back", height: "mid" },
   { id: "Right lower back", view: "back", height: "mid" },
 ];
+
+const SURFACE_PREFIX = /^(Front|Back|Left side|Right side) of (.+)$/i;
+
+/** The camera angle is part of the clinical location. "Left thigh" alone is
+ * ambiguous; "Back of left thigh" is not. Regions that already name an
+ * anatomical surface (face, ear, upper/lower back) do not get a redundant
+ * prefix. */
+export function preciseBodyLocation(location: string, surface: BodySurface): string {
+  const base = baseBodyLocation(location)!;
+  if (/\b(face|ear|upper back|lower back)\b/i.test(base)) return base;
+  const lower = `${base.charAt(0).toLowerCase()}${base.slice(1)}`;
+  if (surface === "front") return `Front of ${lower}`;
+  if (surface === "back") return `Back of ${lower}`;
+  return `${surface === "left" ? "Left" : "Right"} side of ${lower}`;
+}
+
+/** Removes the view qualifier so the picker can keep the same body region
+ * highlighted after the precise string is stored by its parent form. */
+export function baseBodyLocation(location: string | null): string | null {
+  if (!location) return null;
+  const match = location.match(SURFACE_PREFIX);
+  if (!match) return location;
+  const base = match[2];
+  return `${base.charAt(0).toUpperCase()}${base.slice(1)}`;
+}
+
+/** Derives the selected surface when someone freely rotates the 3D figure. */
+export function bodySurfaceAt(normal: { x: number; z: number }): BodySurface {
+  if (normal.z > .35) return "front";
+  if (normal.z < -.35) return "back";
+  return normal.x >= 0 ? "left" : "right";
+}
 
 /** Maps a point on the patient-facing human mesh to the stored location. The
  * x-axis is patient-relative: positive is the patient's left. */
