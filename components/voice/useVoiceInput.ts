@@ -1,0 +1,190 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { voiceStatus } from "@/lib/voice/speech";
+
+/*
+  Microphone input.
+
+  Primary path is ElevenLabs Scribe via /api/transcribe: it works in every
+  browser and detects the spoken language by itself, so a Spanish speaker just
+  talks. The browser's SpeechRecognition is the fallback, and it is only a
+  fallback — it exists in Chrome and not much else.
+
+  Capability is checked on mount rather than on first use, because finding out
+  that transcription is unavailable AFTER someone has spoken means asking them
+  to repeat themselves.
+*/
+
+type SpeechRecognitionLike = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: ((e: { error?: string }) => void) | null;
+  onend: (() => void) | null;
+};
+
+function browserRecognition(): SpeechRecognitionLike | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  };
+  const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+  return Ctor ? new Ctor() : null;
+}
+
+export type VoiceResult = { text: string; languageCode: string };
+
+export function useVoiceInput({
+  onResult,
+  lang = "en",
+}: {
+  onResult: (r: VoiceResult) => void;
+  lang?: string;
+}) {
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [engine, setEngine] = useState<"elevenlabs" | "browser" | "none">("none");
+
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const useScribe = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    voiceStatus().then((s) => {
+      useScribe.current = s.elevenlabs;
+      const canRecord =
+        typeof window !== "undefined" &&
+        Boolean(navigator.mediaDevices?.getUserMedia) &&
+        typeof MediaRecorder !== "undefined";
+      if (s.elevenlabs && canRecord) setEngine("elevenlabs");
+      else if (browserRecognition()) setEngine("browser");
+      else setEngine("none");
+    });
+  }, []);
+
+  const sendForTranscription = useCallback(
+    async (blob: Blob) => {
+      setTranscribing(true);
+      setError(null);
+      try {
+        const form = new FormData();
+        form.append("audio", blob, "input.webm");
+        const res = await fetch("/api/transcribe", { method: "POST", body: form });
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          if (res.status === 422) {
+            setError("I did not catch that. Please try again, or type it instead.");
+          } else {
+            // Transcription is unavailable; use the browser engine from now on.
+            useScribe.current = false;
+            setEngine(browserRecognition() ? "browser" : "none");
+            setError(
+              body.fallback === "browser"
+                ? "Voice typing is unavailable right now. You can type instead."
+                : "Something went wrong with the recording. You can type instead.",
+            );
+          }
+          return;
+        }
+
+        const json = (await res.json()) as VoiceResult;
+        onResult({ text: json.text, languageCode: json.languageCode || "en" });
+      } catch {
+        setError("Something went wrong with the recording. You can type instead.");
+      } finally {
+        setTranscribing(false);
+      }
+    },
+    [onResult],
+  );
+
+  const startBrowser = useCallback(() => {
+    const recognition = browserRecognition();
+    if (!recognition) {
+      setError("This browser cannot listen. Please type instead.");
+      return;
+    }
+    recognition.lang = lang === "es" ? "es-ES" : "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (e) => {
+      const text = e.results?.[0]?.[0]?.transcript ?? "";
+      if (text) onResult({ text, languageCode: lang });
+    };
+    recognition.onerror = (e) => {
+      setError(
+        e.error === "not-allowed"
+          ? "CareBridge needs permission to use the microphone. You can type instead."
+          : "I did not catch that. Please try again, or type it instead.",
+      );
+      setRecording(false);
+    };
+    recognition.onend = () => setRecording(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setRecording(true);
+  }, [lang, onResult]);
+
+  const start = useCallback(async () => {
+    setError(null);
+
+    if (useScribe.current === false) {
+      startBrowser();
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        if (blob.size > 0) void sendForTranscription(blob);
+      };
+
+      recorder.start();
+      recorderRef.current = recorder;
+      setRecording(true);
+    } catch {
+      // Permission denied or no device. Try the browser engine, which may
+      // reuse an already-granted permission, then give up gracefully.
+      startBrowser();
+    }
+  }, [sendForTranscription, startBrowser]);
+
+  const stop = useCallback(() => {
+    if (recorderRef.current?.state === "recording") {
+      recorderRef.current.stop();
+      recorderRef.current = null;
+    }
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setRecording(false);
+  }, []);
+
+  useEffect(() => () => stop(), [stop]);
+
+  return {
+    start,
+    stop,
+    recording,
+    transcribing,
+    error,
+    engine,
+    supported: engine !== "none",
+    clearError: () => setError(null),
+  };
+}

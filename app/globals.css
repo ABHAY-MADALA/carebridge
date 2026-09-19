@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Accessibility is driven by data-* attributes on <html>, set by the
+  AccessibilityBar and persisted to localStorage. Everything else in the app
+  reads these variables, so no component needs to know about the settings.
+*/
+
+:root {
+  --bg: 248 250 252;
+  --surface: 255 255 255;
+  --raised: 241 245 249;
+  --line: 203 213 225;
+  --ink: 15 23 42;
+  --muted: 71 85 105;
+  --brand: 13 118 128;
+  --brand-ink: 255 255 255;
+  --brand-soft: 224 242 241;
+  --warn: 180 83 9;
+  --warn-soft: 254 243 199;
+  --danger: 185 28 28;
+  --good: 21 128 61;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --speed: 180ms;
+}
+
+/* Text size: everything is sized in rem, so moving the root scales the app. */
+html[data-textsize="sm"] { font-size: 15px; }
+html[data-textsize="base"] { font-size: 17px; }
+html[data-textsize="lg"] { font-size: 20px; }
+html[data-textsize="xl"] { font-size: 23px; }
+
+/* High contrast: near-black on white, heavier lines, no soft tints. */
+html[data-contrast="high"] {
+  --bg: 255 255 255;
+  --surface: 255 255 255;
+  --raised: 255 255 255;
+  --line: 0 0 0;
+  --ink: 0 0 0;
+  --muted: 0 0 0;
+  --brand: 0 0 0;
+  --brand-ink: 255 255 255;
+  --brand-soft: 255 255 255;
+  --warn: 0 0 0;
+  --warn-soft: 255 255 255;
+  --danger: 0 0 0;
+  --good: 0 0 0;
+}
+
+html[data-contrast="high"] * {
+  border-color: rgb(0 0 0) !important;
+}
+
+html[data-contrast="high"] .card,
+html[data-contrast="high"] .btn {
+  border-width: 2px !important;
+}
+
+/* Low stimulation: no motion, no decorative gradients. */
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-motion="reduced"] .decorative-gradient {
+  background: rgb(var(--brand-soft)) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  background-color: rgb(var(--bg));
+  color: rgb(var(--ink));
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+}
+
+/* A visible, consistent focus ring everywhere: the app must be fully keyboard
+   navigable, and a focus style that only shows on some controls is worse than
+   none because it teaches the user to distrust it. */
+*:focus-visible {
+  outline: 3px solid rgb(var(--brand));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+html[data-contrast="high"] *:focus-visible {
+  outline: 4px solid rgb(0 0 0);
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-line rounded-2xl;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-transparent
+           font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Minimum 44px touch targets throughout — large buttons are a stated
+     requirement, not a style preference. */
+  .btn-lg { @apply px-6 py-4 text-lg min-h-[3.5rem]; }
+  .btn-md { @apply px-4 py-3 text-base min-h-[3rem]; }
+  .btn-sm { @apply px-3 py-2 text-sm min-h-[2.75rem]; }
+
+  .btn-primary {
+    @apply bg-brand text-brand-ink hover:opacity-90;
+  }
+
+  .btn-secondary {
+    @apply bg-surface text-ink border-line border-2 hover:bg-raised;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-ink hover:bg-raised;
+  }
+
+  .label {
+    @apply text-sm font-semibold uppercase tracking-wide text-muted;
+  }
+
+  .field {
+    @apply w-full rounded-xl border-2 border-line bg-surface px-4 py-3 text-base
+           text-ink placeholder:text-muted/70;
+  }
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: rgb(var(--brand));
+  color: rgb(var(--brand-ink));
+  border-radius: 0.5rem;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgb(var(--brand) / 0.45); }
+  70% { box-shadow: 0 0 0 16px rgb(var(--brand) / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(var(--brand) / 0); }
+}
+
+.recording-pulse {
+  animation: pulse-ring 1.6s infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up {
+  animation: fade-up var(--speed) ease-out;
+}
