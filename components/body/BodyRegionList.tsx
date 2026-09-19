@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/a11y/useT";
-import { BODY_REGIONS } from "@/lib/body/regions";
+import { BODY_REGIONS, type BodySurface } from "@/lib/body/regions";
 
 /*
   Plain buttons, same canonical region ids as Body3D. This is what makes the
@@ -15,7 +15,7 @@ export function BodyRegionList({
   className,
 }: {
   value: string | null;
-  onChange: (id: string) => void;
+  onChange: (id: string, surface: BodySurface) => void;
   className?: string;
 }) {
   const { tRaw } = useT();
@@ -27,7 +27,7 @@ export function BodyRegionList({
         <li key={r.id}>
           <button
             type="button"
-            onClick={() => onChange(r.id)}
+            onClick={() => onChange(r.id, r.view)}
             aria-pressed={value === r.id}
             className={cn(
               "btn btn-sm",

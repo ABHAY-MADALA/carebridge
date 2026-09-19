@@ -9,6 +9,7 @@ import { useT } from "@/components/a11y/useT";
 import { AnatomyMap } from "./AnatomyMap";
 import { BodyLoading } from "./BodyLoading";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { baseBodyLocation, preciseBodyLocation, type BodySurface } from "@/lib/body/regions";
 
 /*
   The drop-in replacement for the old 2D BodyMap everywhere the flagship
@@ -42,6 +43,8 @@ export function BodyPicker({
   const [attempt, setAttempt] = useState(0);
   const [showList, setShowList] = useState(false);
   const [threeDimensional, setThreeDimensional] = useState(true);
+  const selectedBase = baseBodyLocation(value);
+  const select = (id: string, surface: BodySurface) => onChange(preciseBodyLocation(id, surface));
 
   return (
     <div className="body-picker">
@@ -52,14 +55,14 @@ export function BodyPicker({
           <div className="rounded-2xl border border-line bg-raised p-4">
             <p className="text-sm text-muted">{t("bodyMap.loadFailed")}</p>
             <button type="button" className="btn btn-sm btn-secondary my-3" onClick={async () => { try { const scene = await import("./BodyScene"); scene.clearBodyModel(); } catch { /* Boundary keeps the alternatives available if the chunk is offline. */ } finally { setAttempt(a => a + 1); } }}>{lang === "es" ? "Reintentar cuerpo 3D" : "Retry 3D body"}</button>
-            <AnatomyMap value={value} onChange={onChange} />
-            <BodyRegionList value={value} onChange={onChange} className="mt-3" />
+            <AnatomyMap value={selectedBase} onChange={select} />
+            <BodyRegionList value={selectedBase} onChange={select} className="mt-3" />
           </div>
         }
       >
-        <Body3D value={value} onChange={onChange} severity={severity} />
+        <Body3D value={selectedBase} onChange={select} severity={severity} />
       </BodyPickerErrorBoundary>
-      ) : <AnatomyMap value={value} onChange={onChange} />}
+      ) : <AnatomyMap value={selectedBase} onChange={select} />}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
       <button
@@ -77,7 +80,7 @@ export function BodyPicker({
       {showList && (
         <div className="mt-3">
           <p className="mb-2 text-sm text-muted">{t("bodyMap.chooseFromList")}</p>
-          <BodyRegionList value={value} onChange={onChange} />
+          <BodyRegionList value={selectedBase} onChange={select} />
         </div>
       )}
     </div>

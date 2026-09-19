@@ -7,7 +7,7 @@ import { buildSummary, summaryForDisplay, summaryToText } from "../lib/health/su
 import { measurementComparison } from "../lib/health/measurementComparison";
 import { TimerClock } from "../lib/body/TimerClock";
 import { messages } from "../lib/i18n/messages";
-import { BODY_REGIONS, bodyRegionAt } from "../lib/body/regions";
+import { BODY_REGIONS, baseBodyLocation, bodyRegionAt, bodySurfaceAt, preciseBodyLocation } from "../lib/body/regions";
 
 const now = new Date("2026-09-19T12:00:00");
 const event = (date: string, onset: string | null = null, occurredAt = date) => HealthEvent.parse({ id: date, label: "Abdominal pain", category: "pain", recordedAt: date, occurredAt, onset, inputMethod: "form", severity: 5 });
@@ -134,6 +134,14 @@ assert.equal(bodyRegionAt({ x: .062, y: 1.67 }, .1), "Left ear");
 assert.equal(bodyRegionAt({ x: -.035, y: 1.66 }, 1), "Right face");
 assert.equal(bodyRegionAt({ x: 0, y: 1.66 }, 1), "Center face");
 assert.equal(bodyRegionAt({ x: 0, y: 1.78 }, 1), "Head");
+assert.equal(preciseBodyLocation("Left thigh", "back"), "Back of left thigh");
+assert.equal(preciseBodyLocation("Right lower leg", "front"), "Front of right lower leg");
+assert.equal(preciseBodyLocation("Left thigh", "left"), "Left side of left thigh");
+assert.equal(preciseBodyLocation("Right thigh", "right"), "Right side of right thigh");
+assert.equal(preciseBodyLocation("Left upper back", "back"), "Left upper back");
+assert.equal(baseBodyLocation("Back of left thigh"), "Left thigh");
+assert.equal(bodySurfaceAt({ x: 0, z: -.8 }), "back");
+assert.equal(bodySurfaceAt({ x: .8, z: 0 }), "left");
 assert.match(messages.en.bodyPicture.locationRecorded, /location/i);
 assert.match(readFileSync("app/body-picture/page.tsx", "utf8"), /recordedLocation,[\s\S]*descriptors/);
 assert.match(readFileSync("app/body-picture/page.tsx", "utf8"), /Describe with your voice/);

@@ -12,6 +12,7 @@ import { painLabelFor } from "@/lib/health/categories";
 import type { DraftEvent } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { baseBodyLocation } from "@/lib/body/regions";
 
 const DESCRIPTOR_KEYS = ["sharp", "dull", "throbbing", "burning", "pressure"] as const;
 const PATTERN_KEYS = ["comesAndGoes", "constant"] as const;
@@ -53,7 +54,16 @@ export default function BodyPicturePage() {
     ? { night: "Peor de noche", rest: "Mejor con descanso", activity: "Peor con actividad" }
     : { night: "Worse at night", rest: "Better with rest", activity: "Worse with activity" };
   const onsetLabel = (key: string) => key === "threeDaysAgo" ? (lang === "es" ? "Hace 3 días" : "3 days ago") : t(`manualEntry.onsets.${key}`);
-  const localizedLocation = location ? (lang === "en" ? location : regionLabels[location] ?? location) : "";
+  const localizedLocation = (() => {
+    if (!location || lang === "en") return location ?? "";
+    const base = baseBodyLocation(location) ?? location;
+    const label = regionLabels[base] ?? base;
+    if (location.startsWith("Front of ")) return `Parte frontal: ${label}`;
+    if (location.startsWith("Back of ")) return `Parte posterior: ${label}`;
+    if (location.startsWith("Left side of ")) return `Lado izquierdo: ${label}`;
+    if (location.startsWith("Right side of ")) return `Lado derecho: ${label}`;
+    return label;
+  })();
   const recordedLocation = location
     ? t("bodyPicture.locationRecorded", { location: localizedLocation })
     : null;

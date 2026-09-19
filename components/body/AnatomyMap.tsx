@@ -3,8 +3,9 @@
 import { useState, type ReactNode } from "react";
 import { Minus, Plus, RotateCcw, MousePointer2 } from "lucide-react";
 import { useT } from "@/components/a11y/useT";
+import type { BodySurface } from "@/lib/body/regions";
 
-type Props = { value: string | null; onChange: (id: string) => void };
+type Props = { value: string | null; onChange: (id: string, surface: BodySurface) => void };
 
 /** Original vector anatomy, split into the same canonical regions as the record.
  * Front-view left/right are the patient's, not the viewer's. */
@@ -12,7 +13,8 @@ function Figure({ back, value, onChange }: Props & { back: boolean }) {
   const { tRaw, lang } = useT();
   const labels = tRaw<Record<string, string>>("bodyMap.regions");
   function region(id: string, children: ReactNode) {
-    return <g key={id} className="anatomy-region" role="button" tabIndex={0} aria-label={`${back ? (lang === "es" ? "Espalda" : "Back view") : (lang === "es" ? "Frente" : "Front view")}: ${labels[id] ?? id}`} aria-pressed={value === id} onClick={() => onChange(id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onChange(id); } }}>{children}</g>;
+    const surface = back ? "back" : "front";
+    return <g key={id} className="anatomy-region" role="button" tabIndex={0} aria-label={`${back ? (lang === "es" ? "Espalda" : "Back view") : (lang === "es" ? "Frente" : "Front view")}: ${labels[id] ?? id}`} aria-pressed={value === id} onClick={() => onChange(id, surface)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onChange(id, surface); } }}>{children}</g>;
   }
   return (
     <svg className="anatomy-figure" viewBox="0 0 240 600" role="group" aria-label={back ? "Back body regions" : "Front body regions"}>
