@@ -111,6 +111,10 @@ console.log("\n--- Clinician-precise body regions ---");
     ["Pain in my right thigh.", "Right thigh"],
     ["My left lower leg hurts.", "Left lower leg"],
     ["Me duele el muslo derecho.", "Right thigh"],
+    ["My right armpit hurts.", "Right armpit"],
+    ["Pain in my left ear.", "Left ear"],
+    ["The right side of my face hurts.", "Right face"],
+    ["Me duele la oreja derecha.", "Right ear"],
   ];
   for (const [text, expected] of cases) {
     const location = extractDrafts(text)[0]?.bodyLocation;

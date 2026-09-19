@@ -18,12 +18,19 @@ export type BodyRegion = {
 
 export const BODY_REGIONS: BodyRegion[] = [
   { id: "Head", view: "front", height: "upper" },
+  { id: "Center face", view: "front", height: "upper" },
+  { id: "Left face", view: "front", height: "upper" },
+  { id: "Right face", view: "front", height: "upper" },
+  { id: "Left ear", view: "front", height: "upper" },
+  { id: "Right ear", view: "front", height: "upper" },
   { id: "Neck", view: "front", height: "upper" },
   { id: "Center chest", view: "front", height: "upper" },
   { id: "Left chest", view: "front", height: "upper" },
   { id: "Right chest", view: "front", height: "upper" },
   { id: "Left shoulder", view: "front", height: "upper" },
   { id: "Right shoulder", view: "front", height: "upper" },
+  { id: "Left armpit", view: "front", height: "upper" },
+  { id: "Right armpit", view: "front", height: "upper" },
   { id: "Left upper arm", view: "front", height: "upper" },
   { id: "Right upper arm", view: "front", height: "upper" },
   { id: "Left elbow", view: "front", height: "mid" },
@@ -64,9 +71,16 @@ export function bodyRegionAt(point: { x: number; y: number }, normalZ: number): 
   const distanceFromCenter = Math.abs(x);
   const side = x >= 0 ? "Left" : "Right";
   const sided = (part: string) => distanceFromCenter < .045 ? `Center ${part}` : `${side} ${part}`;
-  if (y > 1.59) return "Head";
+  if (y > 1.59) {
+    if (distanceFromCenter > .052 && y < 1.75) return `${side} ear`;
+    if (normalZ > .18 && y < 1.72) {
+      return distanceFromCenter < .018 ? "Center face" : `${side} face`;
+    }
+    return "Head";
+  }
   if (y > 1.48 && distanceFromCenter < .095) return "Neck";
   if (distanceFromCenter > .44 && y > .87) return `${side} hand`;
+  if (distanceFromCenter >= .165 && distanceFromCenter <= .22 && y > 1.27 && y < 1.40 && normalZ > -.2) return `${side} armpit`;
   if (distanceFromCenter > .18 && y > 1.32) return `${side} shoulder`;
   if (distanceFromCenter > .27 && y > 1.08 && y < 1.18) return `${side} elbow`;
   if (distanceFromCenter > .19 && y > 1.17) return `${side} upper arm`;

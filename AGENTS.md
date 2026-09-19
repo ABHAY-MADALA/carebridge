@@ -124,6 +124,16 @@ right thigh versus right lower leg, back side, pelvis sides/center, and typed
 English/Spanish phrases. Live QA selected and reviewed Right chest, Right thigh,
 and Right lower leg without performing the final save.
 
+The head/shoulder follow-up adds patient-relative left/right ears, left/right
+and center face, plus left/right armpits to the 3D hit mapper, vector fallback,
+accessible region list, English/Spanish labels, stored pain labels, and offline
+text parser. Decorative 3D ear meshes are now selectable instead of falling
+through to Head. Body Picture's optional description also has a microphone that
+appends transcribed speech to any existing text while leaving the automatically
+captured body location intact. Live QA selected Right armpit, Right ear, and
+Right face in the vector map and confirmed the voice-description control without
+saving an entry; typecheck, all verification suites, and production build pass.
+
 Sidebar help dialogs are portaled to the viewport rather than rendered inside
 the rail's scroll container. They stay anchored to the selected info button,
 clamp to the screen edges, flip above lower controls when needed, and gain their

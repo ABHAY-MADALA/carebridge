@@ -771,7 +771,14 @@ html[data-contrast="high"] .side-nav-card { border-width: 2px; box-shadow: none;
 .description-field:focus-within { border-color: rgb(var(--brand)); }
 .description-field textarea { width: 100%; min-height: 74px; display: block; resize: vertical; background: transparent; font-size: 13px; line-height: 1.6; outline: none; }
 .description-field textarea::placeholder { color: rgb(var(--muted)); }
-.description-field > span { display: block; text-align: right; color: rgb(var(--muted)); font-size: 10px; }
+.description-field-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 5px; }
+.description-voice-button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 5px 9px; border-radius: 7px; background: rgb(var(--brand-soft)); color: rgb(var(--brand)); font-size: .6875rem; font-weight: 650; }
+.description-voice-button:hover { background: rgb(var(--raised)); color: rgb(var(--ink)); }
+.description-voice-button:disabled { cursor: wait; opacity: .72; }
+.description-voice-button.is-recording { background: rgb(var(--danger) / .13); color: rgb(var(--danger)); }
+.description-voice-button svg { width: 15px; height: 15px; }
+.description-count { color: rgb(var(--muted)); font-size: 10px; }
+.body-description-voice-error { margin-top: 6px; color: rgb(var(--danger)); font-size: .6875rem; line-height: 1.45; }
 .descriptor-chips { display: flex; flex-wrap: wrap; gap: 7px; }
 .descriptor-chips button { min-height: 44px; padding: 5px 12px; font-size: 12px; border: 1px solid rgb(var(--line)); border-radius: 24px; color: rgb(var(--muted)); }
 .descriptor-chips button:hover { color: rgb(var(--ink)); border-color: rgb(var(--muted)); }

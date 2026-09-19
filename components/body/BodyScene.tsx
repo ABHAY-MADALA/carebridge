@@ -14,6 +14,8 @@ import { bodyRegionAt } from "@/lib/body/regions";
 // The local CC0 human is 1.8 units tall, faces +Z, and has patient-left at +X.
 const ANCHORS: Record<string, [number, number, number]> = {
   Head: [0, 1.68, .10], Neck: [0, 1.52, .04], Chest: [0, 1.38, .12],
+  "Center face": [0, 1.66, .115], "Left face": [.032, 1.66, .108], "Right face": [-.032, 1.66, .108],
+  "Left ear": [.061, 1.68, .075], "Right ear": [-.061, 1.68, .075],
   "Center chest": [0, 1.38, .12], "Left chest": [.10, 1.38, .12], "Right chest": [-.10, 1.38, .12],
   "Upper abdomen": [0, 1.19, .085], "Lower abdomen": [0, 1.04, .09], Pelvis: [0, .92, .08],
   "Center upper abdomen": [0, 1.19, .085], "Left upper abdomen": [.08, 1.19, .085], "Right upper abdomen": [-.08, 1.19, .085],
@@ -21,6 +23,7 @@ const ANCHORS: Record<string, [number, number, number]> = {
   "Center pelvis": [0, .92, .08],
   "Left pelvis": [.11, .92, .08], "Right pelvis": [-.11, .92, .08],
   "Left shoulder": [.205, 1.46, .025], "Right shoulder": [-.205, 1.46, .025],
+  "Left armpit": [.185, 1.34, .035], "Right armpit": [-.185, 1.34, .035],
   "Left arm": [.35, 1.25, .025], "Right arm": [-.35, 1.25, .025],
   "Left upper arm": [.285, 1.28, .025], "Right upper arm": [-.285, 1.28, .025],
   "Left elbow": [.38, 1.14, .02], "Right elbow": [-.38, 1.14, .02],
@@ -86,7 +89,21 @@ function Human({ value, onChange, marker, onMarker, dark, highContrast, onReady 
   };
   return <group>
     <mesh geometry={geometry} material={material} onClick={select} />
-    {[-1, 1].map((side) => <mesh key={side} position={[side * .0302, 1.689, .07855]} material={material}><sphereGeometry args={[.0125, 24, 16]} /></mesh>)}
+    {[-1, 1].map((side) => {
+      const id = side === 1 ? "Left ear" : "Right ear";
+      const point = new Vector3(side * .0302, 1.689, .07855);
+      return <mesh
+        key={side}
+        position={point}
+        material={material}
+        onClick={(event) => {
+          if (event.delta > 5) return;
+          event.stopPropagation();
+          onMarker(point.clone());
+          onChange(id);
+        }}
+      ><sphereGeometry args={[.0125, 24, 16]} /></mesh>;
+    })}
   </group>;
 }
 

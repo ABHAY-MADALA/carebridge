@@ -17,6 +17,13 @@ function Figure({ back, value, onChange }: Props & { back: boolean }) {
   return (
     <svg className="anatomy-figure" viewBox="0 0 240 600" role="group" aria-label={back ? "Back body regions" : "Front body regions"}>
       {region("Head", <path d="M120 12C101 12 95 24 95 42l2 16c-6-6-7 2-3 11l5 4c3 13 12 23 21 23s18-10 21-23l5-4c4-9 3-17-3-11l2-16c0-18-6-30-25-30Z" />)}
+      {!back && <>
+        {region("Right ear", <ellipse cx="97" cy="61" rx="5" ry="12" />)}
+        {region("Left ear", <ellipse cx="143" cy="61" rx="5" ry="12" />)}
+        {region("Right face", <path d="M102 37c-1 15 0 29 5 39 3 6 6 9 9 11V37Z" />)}
+        {region("Center face", <path d="M116 35h8v52c-3 2-5 2-8 0Z" />)}
+        {region("Left face", <path d="M124 37v50c3-2 6-5 9-11 5-10 6-24 5-39Z" />)}
+      </>}
       {region("Neck", <path d="M104 86v18l-15 13 31 21 31-21-15-13V86c-10 13-22 13-32 0Z" />)}
       {[-1, 1].map((side) => {
         const name = back ? (side === -1 ? "Left" : "Right") : (side === -1 ? "Right" : "Left");
@@ -42,6 +49,8 @@ function Figure({ back, value, onChange }: Props & { back: boolean }) {
       </> : <>
         {region("Right chest", <path d="M88 114c12 7 20 12 32 14v58c-11 7-24 3-37-7l-10-39Z" />)}
         {region("Left chest", <path d="M152 114c-12 7-20 12-32 14v58c11 7 24 3 37-7l10-39Z" />)}
+        {region("Right armpit", <path d="M73 137c4 2 9 2 14 0l-4 27c-5-3-9-9-12-16Z" />)}
+        {region("Left armpit", <path transform="translate(240 0) scale(-1 1)" d="M73 137c4 2 9 2 14 0l-4 27c-5-3-9-9-12-16Z" />)}
         {region("Right upper abdomen", <path d="M84 183c13 8 25 12 36 6v60H96l-1-27Z" />)}
         {region("Left upper abdomen", <path d="M156 183c-13 8-25 12-36 6v60h24l1-27Z" />)}
         {region("Right lower abdomen", <path d="M95 251h25v51l-31-28Z" />)}
