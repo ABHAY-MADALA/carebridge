@@ -8,11 +8,13 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "verify": "tsx scripts/verify-engine.ts && tsx scripts/verify-fallback.ts && tsx scripts/verify-guards.ts && tsx scripts/verify-advocate.ts",
+    "verify": "tsx scripts/verify-engine.ts && tsx scripts/verify-fallback.ts && tsx scripts/verify-guards.ts && tsx scripts/verify-advocate.ts && tsx scripts/verify-ui-fixes.ts",
     "check-voice": "tsx scripts/check-voice.ts",
     "rehearse": "tsx scripts/rehearse.ts"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.454.0",
@@ -21,6 +23,7 @@
     "react-dom": "^19.0.0",
     "recharts": "^2.15.0",
     "tailwind-merge": "^2.6.0",
+    "three": "^0.186.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

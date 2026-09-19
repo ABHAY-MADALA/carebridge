@@ -95,11 +95,11 @@ export function DoctorSpeaks({ speech }: { speech: ReturnType<typeof useSpeaker>
   }, [result, saveDrafts]);
 
   return (
-    <section className="card p-5" aria-labelledby="doctor-speaks-heading">
-      <h2 id="doctor-speaks-heading" className="text-xl font-bold">
+    <section aria-labelledby="doctor-speaks-heading">
+      <h2 id="doctor-speaks-heading" className="text-lg font-semibold text-ink">
         For the doctor: explain something to me
       </h2>
-      <p className="mt-1 text-base text-muted">
+      <p className="mt-1 text-sm text-muted">
         Say what you would normally say. CareBridge will put it in plain words, read it to
         the patient, and save it so they do not have to remember it.
       </p>

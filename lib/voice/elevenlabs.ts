@@ -1,10 +1,11 @@
 /*
   ElevenLabs, server-side only.
 
-  Two deliberately distinct voices exist. One speaks AS the patient (Speak for
-  Me, the voice advocate, quick phrases). The other reads the record TO the
-  doctor. Two people are being represented through one device, and nobody in
-  the room should ever be unsure which one is talking.
+  One voice, everywhere — CareBridge speaking on the patient's behalf, or
+  reading their record aloud to a doctor, is still CareBridge, not a second
+  persona. `Speaker` is kept as a parameter through this file and its callers
+  so the shape doesn't have to change again if a real second voice becomes
+  useful later, but it no longer affects which voice is used.
 */
 
 export type Speaker = "patient" | "clinical";
@@ -12,24 +13,16 @@ export type Speaker = "patient" | "clinical";
 const TTS_BASE = "https://api.elevenlabs.io/v1/text-to-speech";
 const STT_URL = "https://api.elevenlabs.io/v1/speech-to-text";
 
-// Stock voices, used when the env vars are not set.
-const DEFAULT_PATIENT_VOICE = "21m00Tcm4TlvDq8ikWAM";
-const DEFAULT_CLINICAL_VOICE = "onwK4e9ZLuTAKqWW03F9";
+// Stock voice, used when the env var is not set.
+const DEFAULT_VOICE = "21m00Tcm4TlvDq8ikWAM";
 
 export function elevenLabsKey(): string | null {
   const key = process.env.ELEVENLABS_API_KEY?.trim();
   return key ? key : null;
 }
 
-export function voiceIdFor(speaker: Speaker): string {
-  if (speaker === "clinical") {
-    return (
-      process.env.ELEVENLABS_CLINICAL_VOICE_ID?.trim() ||
-      process.env.ELEVENLABS_VOICE_ID?.trim() ||
-      DEFAULT_CLINICAL_VOICE
-    );
-  }
-  return process.env.ELEVENLABS_VOICE_ID?.trim() || DEFAULT_PATIENT_VOICE;
+export function voiceIdFor(_speaker: Speaker): string {
+  return process.env.ELEVENLABS_VOICE_ID?.trim() || DEFAULT_VOICE;
 }
 
 /**

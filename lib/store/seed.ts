@@ -144,6 +144,7 @@ export function buildMetrics(): DailyMetric[] {
       fatigueLevel: Number(clamp(fatigue, 0, 10).toFixed(1)),
       cycleDay,
       cyclePhase: phase,
+      source: "demo",
     });
   }
 
@@ -174,8 +175,15 @@ type SeedEvent = {
   actually uses an app like this.
 */
 const SEED_EVENTS: SeedEvent[] = [
+  /*
+    These two must land on cycle days 1 and 2. The cycle model derives the
+    phase from the date, so a "Period started" event on any other day renders
+    as "luteal phase" on the timeline — a contradiction that would discredit
+    the cycle-aware baseline in front of anyone who knows how cycles work.
+    With TODAY_CYCLE_DAY = 24, cycle day 1 is exactly 23 days ago.
+  */
   {
-    daysAgo: 26,
+    daysAgo: 23,
     hour: 9,
     minute: 5,
     category: "cycle",
@@ -184,7 +192,7 @@ const SEED_EVENTS: SeedEvent[] = [
     inputMethod: "form",
   },
   {
-    daysAgo: 25,
+    daysAgo: 22,
     hour: 20,
     minute: 30,
     category: "pain",

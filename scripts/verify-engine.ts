@@ -69,6 +69,30 @@ console.log(
     `\n     exaggerate an ordinary luteal week as a change.`,
 );
 
+/*
+  The seeded narrative has to agree with the cycle model. A "Period started"
+  event that renders as "luteal phase" on the timeline makes the cycle-aware
+  baseline look broken to anyone who knows how cycles work.
+*/
+const periodStart = events.find((e) => e.label === "Period started");
+check(
+  periodStart?.cyclePhase === "menstrual" && periodStart?.cycleDay === 1,
+  `the period-start event falls on cycle day 1 (menstrual) — got day ${periodStart?.cycleDay} / ${periodStart?.cyclePhase}`,
+);
+check(
+  events
+    .filter((e) => e.category === "cycle")
+    .every((e) => e.cyclePhase === "menstrual"),
+  "no cycle event lands outside the menstrual phase",
+);
+check(
+  events.every((e) => {
+    const day = metrics.find((m) => m.date === e.occurredAt.slice(0, 10));
+    return !day || day.cyclePhase === e.cyclePhase;
+  }),
+  "every event's phase matches the daily record for that date",
+);
+
 // The demo must not depend on a stale clock: re-running must be identical.
 const again = buildMetrics();
 check(

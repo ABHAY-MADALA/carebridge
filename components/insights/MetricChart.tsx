@@ -96,6 +96,7 @@ export function MetricChart({
               strokeWidth={2.5}
               dot={false}
               connectNulls
+              isAnimationActive={false}
             />
           </LineChart>
         </ResponsiveContainer>

@@ -8,7 +8,10 @@ import { useHealthData } from "@/components/health/useHealthData";
 import { useVoiceInput } from "@/components/voice/useVoiceInput";
 import { useSpeaker } from "@/components/voice/useSpeaker";
 import { useSettings } from "@/components/a11y/SettingsProvider";
+import { useT } from "@/components/a11y/useT";
 import { ConfirmationCard } from "./ConfirmationCard";
+import { BodyPicker } from "@/components/body/BodyPicker";
+import { SeverityScale } from "@/components/manual/SeverityScale";
 import { cn } from "@/lib/utils";
 
 /*
@@ -18,16 +21,20 @@ import { cn } from "@/lib/utils";
   genuinely needs and never filling in a blank on its own.
 */
 
-const PROMPTS = [
-  "My lower stomach has been hurting a lot today.",
-  "I keep getting really tired around 3 PM.",
-  "I only slept about five hours last night.",
-];
-
-export function AssistantPanel() {
+export function AssistantPanel({
+  initialMessage,
+}: {
+  /** A message Home handed off (mood check or the compact entry box). Sent
+   * immediately if `autoSend`, prefilled for editing otherwise, or — if
+   * `startVoice` — the mic starts recording on arrival instead. Consumed
+   * once and never replayed on re-render. */
+  initialMessage?: { text: string; autoSend: boolean; startVoice?: boolean } | null;
+} = {}) {
   const { saveDrafts } = useHealthData();
   const { settings } = useSettings();
+  const { t, tRaw } = useT();
   const speech = useSpeaker();
+  const prompts = tRaw<string[]>("assistant.prompts");
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [turn, setTurn] = useState<AssistantTurn | null>(null);
@@ -107,15 +114,14 @@ export function AssistantPanel() {
           ...m,
           {
             role: "assistant",
-            content:
-              "Something went wrong on my side. Your words are safe — please try sending that again.",
+            content: t("assistant.somethingWrong"),
           },
         ]);
       } finally {
         setBusy(false);
       }
     },
-    [busy, messages, settings.readAloud, speech],
+    [busy, messages, settings.readAloud, speech, t],
   );
 
   const voice = useVoiceInput({
@@ -126,6 +132,30 @@ export function AssistantPanel() {
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, turn]);
+
+  // Consume a Home-page handoff exactly once, on mount.
+  useEffect(() => {
+    if (initialMessage?.startVoice) {
+      void voice.start();
+    } else if (initialMessage?.text) {
+      if (initialMessage.autoSend) {
+        void send(initialMessage.text, "text", settings.language);
+      } else {
+        setInput(initialMessage.text);
+        inputRef.current?.focus();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Lets ReadAloud (a global listener with no view into this component's
+  // state) know not to talk over the patient while the mic is live.
+  useEffect(() => {
+    document.body.dataset.recording = String(voice.recording);
+    return () => {
+      delete document.body.dataset.recording;
+    };
+  }, [voice.recording]);
 
   const handleSave = async () => {
     if (!turn) return;
@@ -141,36 +171,39 @@ export function AssistantPanel() {
   };
 
   const handleRevise = () => {
-    setTurn((t) => (t ? { ...t, action: "ask" } : t));
+    setTurn((prev) => (prev ? { ...prev, action: "ask" } : prev));
     setMessages((m) => [
       ...m,
       {
         role: "assistant",
-        content: "No problem. Tell me what I should change, or add anything I missed.",
+        content: t("assistant.noProblemRevise"),
       },
     ]);
     inputRef.current?.focus();
   };
 
+  // Only the first missing field is ever asked about in a given turn (mirrors
+  // lib/ai/fallback.ts's question(lang, missing[0], draft)), so only that one
+  // widget renders. Tapping it sends the value through the same path as
+  // typing it — no server-side change needed.
+  const askingFor = turn?.action === "ask" ? turn.missingFields[0] : null;
+
   return (
-    <section className="card p-5 md:p-7" aria-labelledby="tell-carebridge">
+    <section aria-labelledby="tell-carebridge">
       <div className="flex flex-wrap items-center gap-3">
-        <h2 id="tell-carebridge" className="flex items-center gap-2 text-2xl font-bold md:text-3xl">
-          <Sparkles className="h-7 w-7 text-brand" aria-hidden />
-          Tell CareBridge
-        </h2>
+        <h1 id="tell-carebridge" className="flex items-center gap-2 text-[1.75rem] font-semibold tracking-tight text-ink md:text-3xl">
+          <Sparkles className="h-6 w-6 text-brand" aria-hidden />
+          {t("assistant.heading")}
+        </h1>
         {speech.speaking && (
           <button type="button" className="btn btn-sm btn-secondary" onClick={speech.stop}>
             <Square className="h-4 w-4" aria-hidden />
-            Stop speaking
+            {t("assistant.stopSpeaking")}
           </button>
         )}
       </div>
 
-      <p className="mt-2 text-lg text-muted">
-        Say or type whatever is going on. You don&apos;t need the right words, and you
-        don&apos;t need to know where it belongs.
-      </p>
+      <p className="mt-2 text-lg text-muted">{t("assistant.intro")}</p>
 
       {/* Conversation */}
       {messages.length > 0 && (
@@ -192,7 +225,7 @@ export function AssistantPanel() {
               )}
             >
               <p className="label !text-xs opacity-80">
-                {m.role === "user" ? "You" : "CareBridge"}
+                {m.role === "user" ? t("assistant.you") : t("assistant.careBridge")}
               </p>
               <p className="text-base">{m.content}</p>
             </div>
@@ -200,7 +233,7 @@ export function AssistantPanel() {
           {busy && (
             <p className="flex items-center gap-2 text-muted">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              Understanding what you told me...
+              {t("assistant.understanding")}
             </p>
           )}
         </div>
@@ -209,16 +242,12 @@ export function AssistantPanel() {
       {savedCount > 0 && (
         <div className="fade-up mt-5 rounded-xl border-2 border-good bg-brand-soft p-4">
           <p className="text-lg font-bold">
-            Saved. {savedCount === 1 ? "1 entry was" : `${savedCount} entries were`} added to
-            your timeline.
+            {savedCount === 1 ? t("assistant.savedOne") : t("assistant.savedMany", { count: savedCount })}
           </p>
-          <p className="mt-1 text-base">
-            CareBridge filed it in the right place for you. You don&apos;t need to do anything
-            else.
-          </p>
+          <p className="mt-1 text-base">{t("assistant.savedBody")}</p>
           <Link href="/timeline" className="btn btn-md btn-primary mt-3">
             <CalendarDays className="h-5 w-5" aria-hidden />
-            See my timeline
+            {t("assistant.seeTimeline")}
           </Link>
         </div>
       )}
@@ -234,6 +263,22 @@ export function AssistantPanel() {
         </div>
       ) : (
         <>
+          {/*
+            Shown under the question when the assistant is waiting on a pain
+            location or severity — the same widgets ManualEntry uses, so
+            tapping a region or a face is as valid an answer as typing one.
+          */}
+          {askingFor === "bodyLocation" && (
+            <div className="mt-5 rounded-xl bg-raised p-4">
+              <BodyPicker value={null} onChange={(loc) => void send(loc, "text", settings.language)} />
+            </div>
+          )}
+          {askingFor === "severity" && (
+            <div className="mt-5 rounded-xl bg-raised p-4">
+              <SeverityScale value={null} onChange={(v) => void send(String(v), "text", settings.language)} />
+            </div>
+          )}
+
           <form
             className="mt-5"
             onSubmit={(e) => {
@@ -242,17 +287,13 @@ export function AssistantPanel() {
             }}
           >
             <label htmlFor="tell-input" className="label">
-              What&apos;s going on?
+              {t("assistant.whatsGoingOn")}
             </label>
             <textarea
               id="tell-input"
               ref={inputRef}
               className="field mt-1 min-h-[6rem] resize-y text-lg"
-              placeholder={
-                settings.language === "es"
-                  ? "Escriba lo que siente..."
-                  : "For example: my lower stomach has been hurting since yesterday"
-              }
+              placeholder={t("assistant.placeholder")}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -270,7 +311,7 @@ export function AssistantPanel() {
                 disabled={busy || !input.trim()}
               >
                 <Send className="h-5 w-5" aria-hidden />
-                Tell CareBridge
+                {t("assistant.tellCareBridge")}
               </button>
 
               <button
@@ -289,10 +330,10 @@ export function AssistantPanel() {
                   <Mic className="h-5 w-5" aria-hidden />
                 )}
                 {voice.recording
-                  ? "Stop and send"
+                  ? t("assistant.stopAndSend")
                   : voice.transcribing
-                    ? "Understanding..."
-                    : "Speak instead"}
+                    ? t("assistant.transcribing")
+                    : t("assistant.speakInstead")}
               </button>
             </div>
           </form>
@@ -304,15 +345,15 @@ export function AssistantPanel() {
           )}
 
           {messages.length === 0 && (
-            <div className="mt-5">
-              <p className="label">Not sure how to start? Try one of these</p>
+            <div className="mt-5" data-density-hide>
+              <p className="label">{t("assistant.notSureHowToStart")}</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {PROMPTS.map((p) => (
+                {prompts.map((p) => (
                   <button
                     key={p}
                     type="button"
                     className="btn btn-sm btn-secondary text-left"
-                    onClick={() => void send(p, "text", "en")}
+                    onClick={() => void send(p, "text", settings.language)}
                   >
                     &ldquo;{p}&rdquo;
                   </button>

@@ -78,24 +78,39 @@ export function useVoiceInput({
         form.append("audio", blob, "input.webm");
         const res = await fetch("/api/transcribe", { method: "POST", body: form });
 
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          if (res.status === 422) {
-            setError("I did not catch that. Please try again, or type it instead.");
-          } else {
-            // Transcription is unavailable; use the browser engine from now on.
-            useScribe.current = false;
-            setEngine(browserRecognition() ? "browser" : "none");
-            setError(
-              body.fallback === "browser"
-                ? "Voice typing is unavailable right now. You can type instead."
-                : "Something went wrong with the recording. You can type instead.",
-            );
-          }
+        /*
+          204 is the route's way of saying "transcription is unavailable, use
+          your own engine". fetch treats it as a success, so it has to be
+          checked explicitly — otherwise reading the empty body throws and the
+          patient gets a generic error while the hook keeps retrying a service
+          that is not coming back.
+        */
+        if (res.status === 204 || res.status === 503) {
+          useScribe.current = false;
+          const canUseBrowser = Boolean(browserRecognition());
+          setEngine(canUseBrowser ? "browser" : "none");
+          setError(
+            canUseBrowser
+              ? "Voice typing had a problem. Press the microphone once more and it will listen a different way."
+              : "Voice typing is unavailable right now. You can type instead.",
+          );
           return;
         }
 
-        const json = (await res.json()) as VoiceResult;
+        if (!res.ok) {
+          setError(
+            res.status === 422
+              ? "I did not catch that. Please try again, or type it instead."
+              : "Something went wrong with the recording. You can type instead.",
+          );
+          return;
+        }
+
+        const json = (await res.json().catch(() => null)) as VoiceResult | null;
+        if (!json?.text?.trim()) {
+          setError("I did not catch that. Please try again, or type it instead.");
+          return;
+        }
         onResult({ text: json.text, languageCode: json.languageCode || "en" });
       } catch {
         setError("Something went wrong with the recording. You can type instead.");

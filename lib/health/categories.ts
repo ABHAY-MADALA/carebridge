@@ -44,6 +44,17 @@ export function severityFace(severity: number): string {
   return "\u{1F62B}";
 }
 
+/**
+ * The friendly label a pain event gets from its body location — shared by
+ * ManualEntry and the Body Picture page so picking "Lower abdomen" produces
+ * the same "Abdominal pain" label regardless of which picker was used.
+ */
+export function painLabelFor(location: string): string {
+  if (location === "Lower abdomen" || location === "Upper abdomen") return "Abdominal pain";
+  if (location === "Head") return "Headache";
+  return `${location} pain`;
+}
+
 export function severityWord(severity: number): string {
   if (severity <= 1) return "Barely there";
   if (severity <= 3) return "Mild";

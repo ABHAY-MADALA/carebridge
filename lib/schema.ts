@@ -86,6 +86,14 @@ export const DailyMetric = z.object({
   fatigueLevel: z.number().min(0).max(10).nullable(),
   cycleDay: z.number().nullable(),
   cyclePhase: CyclePhase.nullable(),
+  /**
+   * Where the wearable fields (sleep/heart rate/steps) came from. "demo" is
+   * Alex's seeded history; "fitbit" is real data synced from the Fitbit
+   * account via the Google Health API. Defaulted so rows written before this
+   * field existed still parse. Patient-reported fields (painLevel,
+   * fatigueLevel) are never sourced from Fitbit regardless of this value.
+   */
+  source: z.enum(["demo", "fitbit"]).default("demo"),
 });
 export type DailyMetric = z.infer<typeof DailyMetric>;
 

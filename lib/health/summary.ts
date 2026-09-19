@@ -6,7 +6,7 @@ import {
   type TrendDetection,
 } from "@/lib/schema";
 import { METRICS } from "./metrics";
-import { relativeDays } from "@/lib/dates";
+import { describeOnset } from "./onset";
 
 /*
   The doctor summary, assembled from the record.
@@ -23,8 +23,8 @@ import { relativeDays } from "@/lib/dates";
 const RECENT_DAYS = 7;
 const SYMPTOM_CATEGORIES = new Set(["pain", "illness", "fatigue", "sleep", "food", "mood"]);
 
-function recentEvents(events: HealthEvent[], days = RECENT_DAYS): HealthEvent[] {
-  const cutoff = Date.now() - days * 86_400_000;
+function recentEvents(events: HealthEvent[], days = RECENT_DAYS, now = new Date()): HealthEvent[] {
+  const cutoff = now.getTime() - days * 86_400_000;
   return events
     .filter((e) => new Date(e.occurredAt).getTime() >= cutoff)
     .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
@@ -72,8 +72,9 @@ export function buildSummary(
   events: HealthEvent[],
   metrics: DailyMetric[],
   detection: TrendDetection | null,
+  now = new Date(),
 ): DoctorSummary {
-  const recent = recentEvents(events);
+  const recent = recentEvents(events, RECENT_DAYS, now);
   const ranked = rankSymptoms(recent);
   const sections: SummarySection[] = [];
 
@@ -94,17 +95,10 @@ export function buildSummary(
 
   // --- When it started ---------------------------------------------------
   if (top.length) {
-    const earliest = top
-      .map((t) => t.earliest)
-      .sort((a, b) => a.localeCompare(b))[0];
-    // Prefer the patient's own words for onset over our computed date.
-    const stated = recent.find((e) => e.label === top[0].label && e.onset)?.onset;
     sections.push({
       id: "started",
       heading: "When it started",
-      body: stated
-        ? `It started ${stated} — about ${relativeDays(earliest)} by my records.`
-        : `It started about ${relativeDays(earliest)}.`,
+      body: describeOnset(events.filter(e => e.label === top[0].label), now, top[0].label),
       included: true,
     });
   }
@@ -169,13 +163,26 @@ export function buildSummary(
     }));
 
   return DoctorSummary.parse({
-    generatedAt: new Date().toISOString(),
+    generatedAt: now.toISOString(),
     sections,
     approved: false,
     approvedAt: null,
     quotedStatements: quoted,
     source: "deterministic",
   });
+}
+
+/** Display-only correction of the exact legacy generated template. No storage
+ * migration; patient edits and all other approved sections remain untouched.
+ * Anchor to generation time so an old summary never shifts its relative dates. */
+export function summaryForDisplay(summary: DoctorSummary | null, events: HealthEvent[]): DoctorSummary | null {
+  // Recognize only retired generated templates, not arbitrary patient edits.
+  const retired = (body: string) => /^It started .+ — about .+ by my records\.$/.test(body)
+    || /^[^\n:]+: (?:I said it started [^.]+\.(?: I first recorded it [^.]+\.)?|I said it started [^.]+, although related symptoms appear in my timeline from [^.]+\. I first recorded them [^.]+\.|I first recorded it [^.]+\. The start date is not recorded\.)(?: Related entries span \d+ days; they do not establish that symptoms were continuous\.)?$/.test(body);
+  if (!summary || !summary.sections.some(s => s.id === "started" && retired(s.body))) return summary;
+  const started = buildSummary(events.filter(e => e.recordedAt <= summary.generatedAt), [], null, new Date(summary.generatedAt)).sections.find(s => s.id === "started");
+  if (!started) return summary;
+  return { ...summary, sections: summary.sections.map(s => s.id === "started" && retired(s.body) ? { ...s, body: started.body } : s) };
 }
 
 /** One readable block, used for Speak for Me and the clinician view. */

@@ -85,6 +85,20 @@ export async function runAssistantTurn(messages: ChatMessage[]): Promise<Assista
   if (turn.action === "propose" && !turn.drafts.length) return deterministic;
 
   /*
+    The model asks a good question but rarely fills in missingFields itself —
+    the UI (e.g. the inline body map / severity scale under an "ask" turn)
+    depends on that field, not on parsing the question text, so derive it the
+    same deterministic way the fallback ladder would rather than trust an
+    LLM-reported value that's usually just absent.
+  */
+  if (turn.action === "ask" && turn.drafts.length > 0) {
+    const computed = missingFieldsFor(turn.drafts[0]);
+    if (computed.length > 0) {
+      turn.missingFields = computed;
+    }
+  }
+
+  /*
     The model sometimes proposes an event while a required detail is still
     missing. Rather than discard a good extraction, keep its drafts and ask the
     question the deterministic ladder would have asked.

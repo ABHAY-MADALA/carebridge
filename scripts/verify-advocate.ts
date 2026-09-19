@@ -42,6 +42,15 @@ for (const q of [
   check(!containsDiagnosticLanguage(a.answer), "contains no diagnostic language", a.answer);
 }
 
+{
+  const a = fallbackAnswer("How bad is the pain?", ctx);
+  check(
+    /pain|abdomen/i.test(a.answer) && !/fatigue/i.test(a.answer),
+    "a question about pain is answered with pain, not fatigue",
+    a.answer,
+  );
+}
+
 console.log("\n--- Questions the record CANNOT answer ---");
 for (const q of [
   "Have you had any chest pain?",

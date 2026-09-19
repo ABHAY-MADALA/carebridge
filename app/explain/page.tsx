@@ -17,12 +17,16 @@ import { useHealthData } from "@/components/health/useHealthData";
 import { useSpeaker } from "@/components/voice/useSpeaker";
 import { SummaryEditor } from "@/components/explain/SummaryEditor";
 import { HelpTip } from "@/components/HelpTip";
-import { buildSummary, summaryToText } from "@/lib/health/summary";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { useT } from "@/components/a11y/useT";
+import { buildSummary, summaryToText, summaryForDisplay } from "@/lib/health/summary";
 import { relativeDays } from "@/lib/dates";
 
 export default function ExplainPage() {
-  const { loading, events, metrics, detection, summary, saveSummary } = useHealthData();
+  const { loading, events, metrics, detection, summary: storedSummary, saveSummary } = useHealthData();
+  const summary = summaryForDisplay(storedSummary, events);
   const speech = useSpeaker();
+  const { t } = useT();
 
   const [working, setWorking] = useState(false);
 
@@ -67,27 +71,15 @@ export default function ExplainPage() {
   const spokenText = summary ? summaryToText(summary, { intro: true }) : "";
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-center gap-2">
-        <h1 className="text-3xl font-bold md:text-4xl">Help Me Explain</h1>
-        <HelpTip topic="explain" />
-      </header>
-
-      <p className="text-lg text-muted">
-        CareBridge writes this from what you recorded. Read it, change anything you want,
-        and remove anything you would rather keep private. Nothing is shared until you
-        approve it.
-      </p>
+    <div className="space-y-8">
+      <PageHeader title={t("explain.heading")} description={t("explain.intro")} actions={<HelpTip topic="explain" />} />
 
       {loading ? (
-        <p className="text-muted">Loading your health information...</p>
+        <p className="text-muted">{t("explain.loading")}</p>
       ) : !summary ? (
-        <section className="card p-6">
-          <h2 className="text-xl font-bold">Ready when you are</h2>
-          <p className="mt-2 text-base text-muted">
-            CareBridge will put together a short summary of the last week using only your
-            own records.
-          </p>
+        <section className="rounded-2xl border border-line bg-surface p-6">
+          <h2 className="text-lg font-semibold text-ink">{t("explain.readyHeading")}</h2>
+          <p className="mt-2 text-base text-muted">{t("explain.readyBody")}</p>
           <button
             type="button"
             className="btn btn-lg btn-primary mt-4"
@@ -99,15 +91,15 @@ export default function ExplainPage() {
             ) : (
               <Wand2 className="h-5 w-5" aria-hidden />
             )}
-            {working ? "Putting it together..." : "Write my summary"}
+            {working ? t("explain.puttingTogether") : t("explain.writeSummary")}
           </button>
         </section>
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-muted">
-              Written {relativeDays(summary.generatedAt)}
-              {summary.source === "llm" ? " (wording polished by AI)" : ""}
+              {t("explain.writtenAgo", { when: relativeDays(summary.generatedAt) })}
+              {summary.source === "llm" ? t("explain.wordingPolished") : ""}
             </p>
             <button
               type="button"
@@ -116,7 +108,7 @@ export default function ExplainPage() {
               disabled={working}
             >
               <RefreshCw className={working ? "h-4 w-4 animate-spin" : "h-4 w-4"} aria-hidden />
-              Write it again
+              {t("explain.writeAgain")}
             </button>
           </div>
 
@@ -124,22 +116,19 @@ export default function ExplainPage() {
 
           {/* The patient's verbatim words travel with the summary. */}
           {summary.quotedStatements.length > 0 && (
-            <section className="card p-5" aria-labelledby="quotes-heading">
-              <h2 id="quotes-heading" className="flex items-center gap-2 text-xl font-bold">
-                <Quote className="h-5 w-5" aria-hidden />
-                What I said, in my own words
+            <section aria-labelledby="quotes-heading" className="border-t border-line pt-8">
+              <h2 id="quotes-heading" className="flex items-center gap-2 text-lg font-semibold text-ink">
+                <Quote className="h-4 w-4" aria-hidden />
+                {t("explain.quotesHeading")}
               </h2>
-              <p className="mt-1 text-sm text-muted">
-                These go to your doctor exactly as you said them. CareBridge does not
-                change them.
-              </p>
+              <p className="mt-1 text-sm text-muted">{t("explain.quotesBody")}</p>
               <ul className="mt-3 space-y-2">
                 {summary.quotedStatements.map((q, i) => (
-                  <li key={i} className="border-l-4 border-line pl-3">
-                    <p className="italic">&ldquo;{q.text}&rdquo;</p>
+                  <li key={i} className="border-l-2 border-line pl-3">
+                    <p className="italic text-ink">&ldquo;{q.text}&rdquo;</p>
                     <p className="text-sm text-muted">
                       {relativeDays(q.when)}
-                      {q.language !== "en" && ` \u00B7 said in ${q.language}`}
+                      {q.language !== "en" && t("explain.saidIn", { lang: q.language })}
                     </p>
                   </li>
                 ))}
@@ -151,8 +140,8 @@ export default function ExplainPage() {
           <section
             className={
               summary.approved
-                ? "card border-2 border-good p-5"
-                : "card border-2 border-brand p-5"
+                ? "rounded-2xl border border-good/40 bg-surface p-5"
+                : "rounded-2xl border border-brand/40 bg-brand-soft/30 p-5"
             }
             aria-labelledby="approve-heading"
           >
@@ -160,15 +149,12 @@ export default function ExplainPage() {
               <>
                 <h2
                   id="approve-heading"
-                  className="flex items-center gap-2 text-xl font-bold"
+                  className="flex items-center gap-2 text-lg font-semibold text-ink"
                 >
                   <BadgeCheck className="h-6 w-6 text-good" aria-hidden />
-                  You approved this summary
+                  {t("explain.approvedHeading")}
                 </h2>
-                <p className="mt-1 text-base">
-                  It is ready to show or read to your doctor. If you edit it again you will
-                  be asked to approve it once more.
-                </p>
+                <p className="mt-1 text-base">{t("explain.approvedBody")}</p>
 
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
@@ -181,26 +167,26 @@ export default function ExplainPage() {
                     {speech.speaking ? (
                       <>
                         <Square className="h-5 w-5" aria-hidden />
-                        Stop
+                        {t("explain.stop")}
                       </>
                     ) : (
                       <>
                         <Volume2 className="h-5 w-5" aria-hidden />
-                        Speak for Me
+                        {t("explain.speakForMe")}
                       </>
                     )}
                   </button>
 
                   <Link href="/clinician" className="btn btn-lg btn-secondary">
                     <Stethoscope className="h-5 w-5" aria-hidden />
-                    Show My Doctor
+                    {t("explain.showMyDoctor")}
                   </Link>
 
                   <HelpTip topic="speakForMe" />
                 </div>
 
                 <label className="mt-4 flex max-w-sm flex-col gap-1">
-                  <span className="label">Speaking speed</span>
+                  <span className="label">{t("explain.speakingSpeed")}</span>
                   <input
                     type="range"
                     min={0.6}
@@ -211,29 +197,26 @@ export default function ExplainPage() {
                   />
                   <span className="text-sm text-muted">
                     {speech.rate < 0.9
-                      ? "Slower"
+                      ? t("explain.slower")
                       : speech.rate > 1.1
-                        ? "Faster"
-                        : "Normal speed"}
+                        ? t("explain.faster")
+                        : t("explain.normalSpeed")}
                   </span>
                 </label>
               </>
             ) : (
               <>
-                <h2 id="approve-heading" className="text-xl font-bold">
-                  Happy with this?
+                <h2 id="approve-heading" className="text-lg font-semibold text-ink">
+                  {t("explain.happyHeading")}
                 </h2>
-                <p className="mt-1 text-base text-muted">
-                  Approving means you are comfortable showing this to your doctor. You can
-                  still change it afterwards.
-                </p>
+                <p className="mt-1 text-base text-muted">{t("explain.happyBody")}</p>
                 <button
                   type="button"
                   className="btn btn-lg btn-primary mt-4"
                   onClick={() => void approve()}
                 >
                   <BadgeCheck className="h-5 w-5" aria-hidden />
-                  Approve this summary
+                  {t("explain.approveSummary")}
                 </button>
               </>
             )}
@@ -243,19 +226,19 @@ export default function ExplainPage() {
           {speech.spokenText && (
             <section
               aria-live="polite"
-              className="card border-2 border-brand bg-brand-soft p-5"
+              className="rounded-2xl border border-brand/40 bg-brand-soft p-5"
             >
               <p className="label flex items-center gap-2">
                 <Volume2 className="h-4 w-4" aria-hidden />
-                Speaking now
+                {t("explain.speakingNow")}
                 {speech.engine === "browser" && (
-                  <span className="normal-case text-muted">(browser voice)</span>
+                  <span className="normal-case text-muted">{t("explain.browserVoice")}</span>
                 )}
               </p>
               <p className="mt-2 whitespace-pre-line text-lg">{speech.spokenText}</p>
               <button type="button" className="btn btn-md btn-secondary mt-3" onClick={speech.stop}>
                 <Square className="h-4 w-4" aria-hidden />
-                Stop
+                {t("explain.stop")}
               </button>
             </section>
           )}

@@ -1,11 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { Mic, Keyboard, Hand, ClipboardList, Stethoscope, Trash2 } from "lucide-react";
+import { Mic, Keyboard, Hand, ClipboardList, Stethoscope } from "lucide-react";
+import { EntryActions } from "@/components/ui/EntryActions";
 import type { HealthEvent, InputMethod } from "@/lib/schema";
 import { useHealthData } from "@/components/health/useHealthData";
 import { HelpTip } from "@/components/HelpTip";
-import { CATEGORY_EMOJI, severityFace, severityWord } from "@/lib/health/categories";
+import { useT } from "@/components/a11y/useT";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { TimelineEntry } from "@/components/ui/TimelineEntry";
+import { SourceBadge } from "@/components/ui/SourceBadge";
 import { dateKeyOf, formatDayHeading, formatTime } from "@/lib/dates";
 import { METRICS } from "@/lib/health/metrics";
 
@@ -15,12 +19,12 @@ import { METRICS } from "@/lib/health/metrics";
   what happened in week three.
 */
 
-const METHOD_ICON: Record<InputMethod, { icon: typeof Mic; label: string }> = {
-  voice: { icon: Mic, label: "Spoken" },
-  text: { icon: Keyboard, label: "Typed" },
-  visual: { icon: Hand, label: "Body map" },
-  form: { icon: ClipboardList, label: "Chosen from a list" },
-  clinician: { icon: Stethoscope, label: "From my doctor" },
+const METHOD_ICON: Record<InputMethod, typeof Mic> = {
+  voice: Mic,
+  text: Keyboard,
+  visual: Hand,
+  form: ClipboardList,
+  clinician: Stethoscope,
 };
 
 function formatDuration(mins: number) {
@@ -29,87 +33,59 @@ function formatDuration(mins: number) {
   return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 }
 
-function EventCard({
-  event,
-  onDelete,
-}: {
-  event: HealthEvent;
-  onDelete: (id: string) => void;
-}) {
-  const method = METHOD_ICON[event.inputMethod];
-  const MethodIcon = method.icon;
+function EventRow({ event, onDelete, last }: { event: HealthEvent; onDelete: (id: string) => Promise<void>; last: boolean }) {
+  const { t, tRaw } = useT();
+  const severityWords = tRaw<string[]>("severityScale.words");
+  const MethodIcon = METHOD_ICON[event.inputMethod];
+  const methodLabel = t(`timeline.methodIcon.${event.inputMethod}`);
 
   return (
-    <li className="card p-4">
-      <div className="flex flex-wrap items-start gap-3">
-        <span aria-hidden className="text-2xl">
-          {CATEGORY_EMOJI[event.category]}
+    <TimelineEntry
+      last={last}
+      time={formatTime(event.occurredAt)}
+      trailing={
+        <EntryActions label={event.label} time={formatTime(event.occurredAt)} onRemove={() => onDelete(event.id)} />
+      }
+      title={
+        <span className="inline-flex items-center gap-2 text-base">
+          {event.label}
         </span>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline gap-x-3">
-            <p className="text-lg font-bold">{event.label}</p>
-            <p className="text-sm text-muted">{formatTime(event.occurredAt)}</p>
-          </div>
-
-          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-            {event.severity !== null && (
-              <p className="flex items-center gap-2">
-                <span aria-hidden className="text-xl">
-                  {severityFace(event.severity)}
-                </span>
-                <span className="font-semibold">{event.severity}/10</span>
-                <span className="text-muted">{severityWord(event.severity)}</span>
-              </p>
-            )}
-            {event.bodyLocation && <p className="text-muted">{event.bodyLocation}</p>}
-            {event.durationMinutes ? (
-              <p className="text-muted">{formatDuration(event.durationMinutes)}</p>
-            ) : null}
-            {event.pattern && <p className="text-muted">{event.pattern}</p>}
-            {event.trendHint === "worse" && (
-              <p className="font-semibold text-warn">Getting worse</p>
-            )}
-            {event.trendHint === "better" && (
-              <p className="font-semibold text-good">Getting better</p>
-            )}
-          </div>
-
-          {/* The patient's own words, kept verbatim and never overwritten. */}
-          {event.originalInput && (
-            <blockquote className="mt-3 border-l-4 border-line pl-3">
-              <p className="italic">&ldquo;{event.originalInput}&rdquo;</p>
-              {event.translation && (
-                <p className="mt-1 text-sm text-muted">
-                  In English: &ldquo;{event.translation}&rdquo;
-                </p>
-              )}
-            </blockquote>
+      }
+      meta={
+        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          {event.severity !== null && (
+            <span className="flex items-center gap-1.5">
+              <span className="font-semibold text-ink">{event.severity}/10</span>
+              <span className="text-muted">{severityWords[event.severity]}</span>
+            </span>
           )}
-
-          <p className="mt-3 flex items-center gap-1.5 text-sm text-muted">
-            <MethodIcon className="h-4 w-4" aria-hidden />
-            {method.label}
-            {event.cyclePhase && <span> &middot; {event.cyclePhase} phase</span>}
-          </p>
+          {event.bodyLocation && <span className="text-muted">{event.bodyLocation}</span>}
+          {event.durationMinutes ? <span className="text-muted">{formatDuration(event.durationMinutes)}</span> : null}
+          {event.pattern && <span className="text-muted">{event.pattern}</span>}
+          {event.trendHint === "worse" && <span className="font-semibold text-warn">{t("timeline.gettingWorse")}</span>}
+          {event.trendHint === "better" && <span className="font-semibold text-good">{t("timeline.gettingBetter")}</span>}
         </div>
-
-        <button
-          type="button"
-          onClick={() => onDelete(event.id)}
-          className="btn btn-sm btn-ghost"
-        >
-          <Trash2 className="h-4 w-4" aria-hidden />
-          <span className="sr-only">Remove {event.label}</span>
-          Remove
-        </button>
-      </div>
-    </li>
+      }
+      quote={event.originalInput || undefined}
+      source={
+        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+          <MethodIcon className="h-3.5 w-3.5" aria-hidden />
+          {methodLabel}
+          {event.cyclePhase && (
+            <span>&middot; {t("timeline.phaseSuffix", { phase: t(`insights.phase.${event.cyclePhase}`) })}</span>
+          )}
+          {event.translation && (
+            <span>&middot; {t("confirmationCard.inEnglish")}: &ldquo;{event.translation}&rdquo;</span>
+          )}
+        </p>
+      }
+    />
   );
 }
 
 export default function TimelinePage() {
   const { loading, events, metrics, deleteEvent } = useHealthData();
+  const { t } = useT();
 
   const days = useMemo(() => {
     const byDay = new Map<string, HealthEvent[]>();
@@ -120,55 +96,44 @@ export default function TimelinePage() {
     return [...byDay.entries()].sort((a, b) => b[0].localeCompare(a[0]));
   }, [events]);
 
-  const metricByDate = useMemo(
-    () => new Map(metrics.map((m) => [m.date, m])),
-    [metrics],
-  );
+  const metricByDate = useMemo(() => new Map(metrics.map((m) => [m.date, m])), [metrics]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-center gap-2">
-        <h1 className="text-3xl font-bold md:text-4xl">My Health Timeline</h1>
-        <HelpTip topic="timeline" />
-      </header>
-
-      <p className="text-lg text-muted">
-        Everything you have told CareBridge, newest first. You did not have to file any
-        of it.
-      </p>
+    <div>
+      <PageHeader
+        title={t("nav.timeline")}
+        description={t("timeline.subtitle")}
+        actions={<HelpTip topic="timeline" />}
+      />
 
       {loading ? (
-        <p className="text-muted">Loading...</p>
+        <p className="text-muted">{t("timeline.loading")}</p>
       ) : days.length === 0 ? (
-        <p className="card p-5 text-lg">
-          Nothing here yet. Tell CareBridge something and it will appear.
-        </p>
+        <p className="text-lg text-muted">{t("timeline.empty")}</p>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-10">
           {days.map(([day, dayEvents]) => {
             const m = metricByDate.get(day);
             return (
               <section key={day} aria-labelledby={`day-${day}`}>
-                <div className="flex flex-wrap items-baseline gap-x-4 border-b-2 border-line pb-2">
-                  <h2 id={`day-${day}`} className="text-xl font-bold uppercase tracking-wide">
+                <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <h2 id={`day-${day}`} className="text-sm font-semibold uppercase tracking-wide text-muted">
                     {formatDayHeading(day)}
                   </h2>
-                  {/* Passive measurements for context, clearly separate from
-                      what the patient chose to report. */}
-                  {m && (
-                    <p className="text-sm text-muted">
-                      {m.sleepMinutes !== null &&
-                        `${METRICS.sleepMinutes.format(m.sleepMinutes)} sleep`}
-                      {m.steps !== null && ` \u00B7 ${METRICS.steps.format(m.steps)}`}
+                  {m && (m.sleepMinutes !== null || m.steps !== null || m.restingHeartRate !== null) && (
+                    <p className="flex items-center gap-1.5 text-sm text-muted">
+                      {m.sleepMinutes !== null && `${METRICS.sleepMinutes.format(m.sleepMinutes)} ${t("timeline.sleepSuffix")}`}
+                      {m.steps !== null && ` · ${METRICS.steps.format(m.steps)}`}
                       {m.restingHeartRate !== null &&
-                        ` \u00B7 ${METRICS.restingHeartRate.format(m.restingHeartRate)} resting`}
+                        ` · ${METRICS.restingHeartRate.format(m.restingHeartRate)} ${t("timeline.restingSuffix")}`}
+                      <SourceBadge source={m.source} />
                     </p>
                   )}
                 </div>
 
-                <ul className="mt-3 space-y-3">
-                  {dayEvents.map((e) => (
-                    <EventCard key={e.id} event={e} onDelete={deleteEvent} />
+                <ul>
+                  {dayEvents.map((e, i) => (
+                    <EventRow key={e.id} event={e} onDelete={deleteEvent} last={i === dayEvents.length - 1} />
                   ))}
                 </ul>
               </section>

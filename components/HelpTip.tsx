@@ -2,56 +2,27 @@
 
 import { Info, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
+import { useT } from "@/components/a11y/useT";
 
 /*
   The small circled i next to features whose name does not explain them.
   Written for someone who is not comfortable with technology: what it is, then
   what they have to do about it — which is usually nothing.
+
+  Copy lives in lib/i18n/messages.ts under helpTips.<topic>, one entry per
+  key below.
 */
 
-export const HELP_TEXT: Record<string, { title: string; what: string; how: string }> = {
-  timeline: {
-    title: "What is my Timeline?",
-    what: "Your timeline is everything you have told CareBridge, in the order it happened. It stays here, so months from now you can still see what was going on this week.",
-    how: "You do not need to do anything. Every time you tell CareBridge something, it appears here by itself.",
-  },
-  baseline: {
-    title: "What is my Personal Baseline?",
-    what: "CareBridge learns what your health usually looks like, and compares recent information with your own earlier patterns. It does not compare you with other people.",
-    how: "Nothing to do. Keep recording how you feel and CareBridge works it out.",
-  },
-  cyclePhase: {
-    title: "Why does my cycle matter?",
-    what: "Some symptoms come and go with your cycle, so the same pain level can be normal one week and unusual the next. CareBridge compares this week with the same part of your previous cycles, not with a simple monthly average.",
-    how: "Nothing to do. Recording when your period starts makes this more accurate.",
-  },
-  changes: {
-    title: "What are Health Changes?",
-    what: "CareBridge looks at several things together, such as pain, tiredness, sleep, activity and heart rate. It only tells you when a few of them move away from your usual pattern at the same time, because one number on its own often means nothing.",
-    how: "If you see a change, you can open it to see exactly which numbers moved. CareBridge does not tell you what it means, and it does not diagnose anything.",
-  },
-  explain: {
-    title: "What is Help Me Explain?",
-    what: "CareBridge writes a short summary of what has been happening, using only the information you recorded, so you do not have to remember it all at the appointment.",
-    how: "Read it, change anything you want, remove anything you would rather not share, then approve it. Nothing is shared until you approve it.",
-  },
-  speakForMe: {
-    title: "What is Speak for Me?",
-    what: "CareBridge reads your approved summary out loud, in the first person, as if you were saying it. It can also answer questions your doctor asks, using only what is in your record.",
-    how: "Press the button when you are with your doctor. You can stop it at any time, and you can always see on screen what is being said.",
-  },
-  clinician: {
-    title: "What does my doctor see?",
-    what: "A clean page with your approved summary, your own words, and the measurements behind it. It is clearly labelled as information you provided.",
-    how: "Approve your summary first. Then hand over your phone or laptop.",
-  },
-};
+const TOPICS = ["timeline", "baseline", "cyclePhase", "changes", "explain", "speakForMe", "clinician"] as const;
+type Topic = (typeof TOPICS)[number];
+type HelpTopicText = { title: string; what: string; how: string };
 
-export function HelpTip({ topic, className }: { topic: keyof typeof HELP_TEXT | string; className?: string }) {
+export function HelpTip({ topic, className }: { topic: Topic | string; className?: string }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const ref = useRef<HTMLDivElement>(null);
-  const help = HELP_TEXT[topic];
+  const { t, tRaw } = useT();
+  const help = TOPICS.includes(topic as Topic) ? tRaw<HelpTopicText>(`helpTips.${topic}`) : undefined;
 
   useEffect(() => {
     if (!open) return;
@@ -99,11 +70,11 @@ export function HelpTip({ topic, className }: { topic: keyof typeof HELP_TEXT | 
               className="btn btn-sm btn-ghost !min-h-[2rem] px-2"
             >
               <X className="h-4 w-4" aria-hidden />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{t("helpTip.close")}</span>
             </button>
           </div>
           <p className="mt-2 text-sm">{help.what}</p>
-          <p className="label mt-3">How do I use this?</p>
+          <p className="label mt-3">{t("helpTip.howToUse")}</p>
           <p className="mt-1 text-sm">{help.how}</p>
         </div>
       )}

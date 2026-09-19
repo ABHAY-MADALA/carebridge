@@ -67,10 +67,110 @@ All tasks complete. The app builds, typechecks, and `npm run verify` passes.
 | 16 | Polish — help tips, tutorial, accessibility bar, README | done |
 | 17 | Verification scripts and pre-demo checks | done |
 
-**Nothing is in progress.** Sensible next steps, in order of value:
+| 18 | Fitbit via Google Health API, full Spanish i18n, real Low Stimulation density, generic Read Aloud, inline pain widgets in the assistant, one voice everywhere, button audit | done |
+| 19 | Full visual redesign (design tokens, Inter, left-sidebar shell) + Body Picture, a new interactive 3D body-region picker | done |
+| 20 | Reference-led charcoal/sand UI, persisted light/dark toggle, original interactive front/back SVG anatomy, compact symptom panel | done |
+| 21 | Realistic local CC0 human mesh, reference-style 3D workspace, surface pain glow, four camera presets, zoom/expand, dark/light materials | done |
+| 22 | Focused demo-readiness fixes: onset provenance, calm measurements, consistent navigation, guided icons, single body action, confirmed Timeline removal, loading/retry, Timer compatibility | done |
 
-1. **Rehearse without keys, then with them.** The one thing a machine cannot
-   check. See the demo script in `README.md`.
+### Latest UI revision (September 19, 2026)
+
+Content-only follow-up: onset summaries now use at most two short patient-voice
+sentences. Exact agreement says when the symptom started; earlier related records
+get a separate sentence without implying one continuous episode. Missing onset
+uses the first recording date, approximate statements remain approximate, and
+backfilled records are not described as entered on their occurrence date.
+`summaryForDisplay` also recognizes the retired verbose onset template. It stays
+read-only and preserves patient edits, approval state, and other sections. The
+shared section feeds both screens and full/per-section speech. Regression cases
+cover matching/conflicting/missing/approximate onset, multiple earlier records,
+singular/plural wording, calendar boundaries, and serialized summaries. No UI or
+My Health/Fitbit changes were made in this follow-up.
+Verification: typecheck, all five `npm run verify` suites, production build, and
+diff whitespace checks passed. Live `/explain` and `/clinician` both display the
+requested two-sentence demo wording. Speech text and serialized-summary parity
+are covered by assertions; actual audio and browser printing were not exercised.
+
+The latest incremental pass preserves routes, records, schemas, and Fitbit code.
+Preferred navigation labels now come from `nav` translations; Guided Check-In is
+included in both navigation menus and its breadcrumb. Its page context suppresses
+the dismiss control and uses Lucide category icons. Body Picture has one form-end
+Add to Timeline action, followed by the existing review step; a radio-group view
+selector replaces the old 2D toggle. Static loading silhouettes reserve the canvas
+footprint; failed loads offer 2D/list selection plus a cache-clearing 3D retry.
+Body materials are warm matte, and orbit damping respects OS reduced motion.
+
+`lib/health/onset.ts` resolves relative statements against `recordedAt`, separates
+stated onset from first recording/occurrence evidence, and does not infer continuous
+symptoms. Both summary screens call `summaryForDisplay` for a read-only correction
+of the exact old contradictory template; it never migrates saved records or changes
+other patient-edited text. New summaries use the same deterministic onset logic,
+and the optional LLM rewording cannot rewrite that section.
+
+Health Changes replaces (unmounts) charts with five `CalmMeasurement` components
+under low stimulation, using the same recent window as detection. Timeline removal
+lives behind `EntryActions`, with a separate confirmation, cancellation/focus return,
+pending guard and visible failure handling. No deletion or test save was performed.
+
+Fiber 9.7.0 still constructs deprecated Three Clock instances. The narrowly scoped
+webpack `scripts/fiber-timer-loader.cjs` replaces only that construction with the
+tested `lib/body/TimerClock.ts` adapter using Three Timer. It fails loudly if upstream
+code changes. No dependency version was changed; remove the compatibility loader
+when stable Fiber migrates. Do not switch to Turbopack without porting this loader.
+
+Checks: `git diff --check`, typecheck, all existing verify suites plus
+`scripts/verify-ui-fixes.ts`, production build; all eight requested routes at desktop
+and 390×844; live keyboard selection/review, static/chart switching, mobile More,
+themes/high contrast/large text/Spanish UI, Timeline confirm/cancel, and deliberately
+failed model fetch → usable fallback → successful retry retaining selection.
+Fresh normal browser sessions had no warnings/errors. Injected failure logs were
+expected. Real screen-reader/audio output and physical-device touch need manual QA;
+final save/delete commits were deliberately not exercised on the user's record.
+
+The user's new references supersede the earlier warm/teal visual direction.
+Dark charcoal is the default, with a light/dark button in the desktop top bar,
+mobile header, and clinician header. `Settings.theme` persists under the existing
+settings key; the pre-paint script applies it without flashing. High contrast
+continues to override palette tokens independently.
+
+`components/body/BodyScene.tsx` is now the default dynamically loaded 3D view.
+It uses the local 2.57 MB `public/models/carebridge-human.glb`, derived from CC0
+MakeHuman graphical assets (source links and license are in `public/models/`).
+`scripts/prepare-body-model.mjs` documents the reproducible mesh conversion.
+Surface clicks map to canonical patient-relative regions and a shader draws the
+pain hotspot. Front/back/left/right, orbit, zoom, reset, and expand are functional.
+`AnatomyMap.tsx` remains the interactive 2D alternative and WebGL-failure fallback;
+the accessible region list remains available. Legacy procedural `Body3D.tsx` is
+unused. There are no remote runtime image/model dependencies.
+The dedicated page has an always-visible detail
+panel, nullable 0–10 intensity, description, onset, descriptors, and review before
+saving. A save lock prevents duplicate submissions, and failures stay on the review.
+The reference's sample symptoms are not prefilled as patient data. Sidebar names
+and placement follow the reference; the top theme button remains available.
+
+Verified: typecheck, domain verification suite, production build, desktop/light/dark
+and 390px mobile UI, keyboard region selection, persisted theme after reload, and
+synthetic Body Picture → review → save → timeline reload on isolated 127.0.0.1
+browser storage. The localhost patient record was not used for test saves.
+
+**Nothing is in progress**, except one external step only the human can do:
+
+1. **Finish the Google Cloud Console side of Fitbit and hand over credentials.**
+   `lib/health/googleHealth.ts` / `app/api/fitbit/*` are built and pass every
+   automated check, but nobody has run the OAuth flow against a real Google
+   account yet. Whoever does: create a Cloud project, enable the Health API,
+   add yourself as a test user (Testing status, not verified — fine for a
+   demo), generate a Web Server OAuth client, and **check what redirect URI
+   the Cloud Console actually accepts** — `app/api/fitbit/callback/route.ts`
+   assumes a normal custom redirect works; if Google forces a fixed one
+   instead, that route needs a "paste your authorization code" fallback UI in
+   `FitbitConnect.tsx` rather than the current redirect-based flow. Add
+   `GOOGLE_HEALTH_CLIENT_ID`/`SECRET`/`REDIRECT_URI` to `.env.local` and run
+   through Connect → real sync once, since a `getUserMedia`-style permission
+   prompt and a fixed-redirect surprise are the two things a machine can't
+   pre-check here (`npm run rehearse` and the button audit all still pass
+   with the Fitbit card in "Setup required," so this doesn't block anything
+   else).
 2. **English → patient-language summary.** Input translation works (Spanish in,
    English preserved alongside the original). The reverse — reading the finished
    summary back in Spanish — only works when an LLM key is present; there is no
@@ -84,10 +184,20 @@ All tasks complete. The app builds, typechecks, and `npm run verify` passes.
 
 ```
 app/
-  layout.tsx              Settings + health-data providers, a11y bar, nav, no-flash script
-  globals.css             Design tokens and the data-* driven accessibility theming
-  page.tsx                Home. Tell CareBridge is the primary surface
-  timeline/page.tsx       Day-grouped record with the patient's quoted words
+  layout.tsx              Settings + health-data providers, Chrome, next/font Inter,
+                          no-flash script (sets data-textsize/contrast/motion/density
+                          before first paint)
+  globals.css             Design tokens (warm canvas, teal brand, sand accent) and the
+                          data-* driven accessibility theming
+  page.tsx                Home. Light entry points only (mood row, compact composer,
+                          three links, a Today chronology) — the full experiences each
+                          live on their own route below
+  tell-carebridge/page.tsx  The full AssistantPanel experience
+  body-picture/page.tsx     The flagship 3D body-region picker (see components/body/)
+  guided-check-in/page.tsx  ManualEntry with forceWizard — one question at a time,
+                          independent of the Low Stimulation setting
+  my-health/page.tsx        FitbitConnect in full, + quiet "future connections"
+  timeline/page.tsx       Day-grouped record as a real vertical chronology
   insights/page.tsx       Change banner, why-panel, charts, cycle-phase comparison
   explain/page.tsx        Generate / edit / approve / Speak for Me
   clinician/page.tsx      Chrome-free approved summary + advocate + doctor tools
@@ -100,22 +210,64 @@ app/
     ask/                  Doctor's question -> answer grounded in stored events only
     explain-back/         Doctor's words -> plain language for the patient
     translate/            Patient's language -> English, additively
+    fitbit/               OAuth + sync against the Google Health API (see below)
 components/
-  SiteNav.tsx             Icons plus words, never icons alone
-  HelpTip.tsx             The circled i. Copy lives in HELP_TEXT here
-  a11y/                   SettingsProvider (text size, contrast, motion, language) + bar
-  assistant/              AssistantPanel (the centrepiece) + ConfirmationCard
-  manual/                 ManualEntry, BodyMap, SeverityScale — the no-AI path
+  Chrome.tsx              Sidebar (desktop) + MobileNav (top bar + bottom nav) outside
+                          /clinician; a minimal chrome-free header on it
+  Sidebar.tsx / MobileNav.tsx  The nav link list lives in each (kept small and
+                          duplicated rather than abstracted — different shapes, not
+                          worth a shared config for 8 links)
+  BrandMark.tsx           Two overlapping circles. The entire logo, deliberately
+  ui/                     Reusable primitives: PageHeader, SectionHeader,
+                          SegmentedControl, HealthMetric (usual/recent/delta row),
+                          TimelineEntry (dot+line+content), SourceBadge (Fitbit tag)
+  body/                   Body Picture. BodyScene.tsx (local human R3F/three.js scene,
+                          lazy-loaded), BodyPicker.tsx (lazy-loads BodyScene behind an
+                          error boundary, always pairs it with BodyRegionList),
+                          BodyRegionList.tsx (the accessible fallback — same region
+                          ids, plain buttons), BodyPickerErrorBoundary.tsx
+  health/FitbitConnect.tsx  Setup required / Disconnected / Connected states, never faked
+  HelpTip.tsx             The circled i. Copy lives in lib/i18n/messages.ts now
+  a11y/                   SettingsProvider (text size, contrast, motion, density,
+                          language), AccessibilityControls (the actual toggles,
+                          horizontal or vertical layout), AccessibilityPanel (the
+                          sidebar-triggered popover — this is what's mounted now,
+                          not the old full-width AccessibilityBar), useT()
+                          (UI-chrome translation), ReadAloud (global click-to-speak)
+  assistant/              AssistantPanel (the centrepiece, now page-level content on
+                          /tell-carebridge, `h1` not `h2`) + ConfirmationCard. Renders
+                          BodyPicker/SeverityScale inline under an "ask" turn when
+                          missingFields[0] is bodyLocation/severity. Takes an optional
+                          `initialMessage` prop for Home's handoff (see
+                          lib/assistantHandoff.ts)
+  manual/                 ManualEntry (one-question wizard under Low Stimulation OR
+                          `forceWizard`, flat form otherwise — same save() path
+                          either way; pain step uses BodyPicker now), BodyMap,
+                          SeverityScale — BodyMap (the old 2D picker) is kept
+                          on purpose only for QuickPhrases' quick in-appointment tap
   health/useHealthData.tsx  One shared read of the record; recomputes baseline + trends
-  insights/               ChangeBanner, WhyAmISeeingThis, MetricChart
-  explain/SummaryEditor   Per-section edit and include/exclude
+  insights/               ChangeBanner, WhyAmISeeingThis (now built on HealthMetric),
+                          MetricChart
+  explain/SummaryEditor   One flowing document (thin dividers, not stacked cards),
+                          per-section edit and a quiet Eye/EyeOff visibility toggle
   clinician/              VoiceAdvocate, QuickPhrases, DoctorSpeaks
   voice/                  useVoiceInput (mic), useSpeaker (speech + on-screen transcript)
-  onboarding/Tutorial     Three screens, then out of the way
+  onboarding/Tutorial     Three screens, then out of the way; doesn't auto-open under
+                          Low Stimulation (checked via useSettings().ready to avoid a
+                          flash before the persisted setting loads)
 lib/
   schema.ts               The single internal language. Every type is a Zod schema
   dates.ts                Local-time day keys and relative phrasing
   utils.ts                cn()
+  assistantHandoff.ts     sessionStorage handoff so Home can start a fresh
+                          /tell-carebridge conversation (typed text, a mood prompt,
+                          or "start recording") without duplicating chat state
+  body/regions.ts         BODY_REGIONS — the single list of selectable region ids,
+                          shared by Body3D (visual placement) and BodyRegionList
+                          (the accessible fallback), so the two pickers can't drift
+  i18n/messages.ts        en/es UI-chrome dictionaries. Stored/matched values (event
+                          labels, onset strings, BodyMap/Body3D region ids) are never
+                          in here — only what the patient reads. See useT.tsx above.
   ai/
     provider.ts           LLM adapter (OpenAI / Anthropic / Gemini) + completeJson
     prompts.ts            System prompts. SAFETY_RULES is shared by all of them
@@ -131,8 +283,16 @@ lib/
     baseline.ts           Cycle-phase-aware baselines
     trends.ts             Multi-signal detection. MIN_SIGNALS lives here
     summary.ts            Builds the doctor summary from the record
-    categories.ts         Patient-facing category names, emoji, severity words
+    categories.ts         Patient-facing category names, emoji, severity words,
+                          painLabelFor() (shared by ManualEntry and the Body Picture
+                          page so both produce the same label from a location)
     createEvent.ts        The one place a draft becomes a HealthEvent
+    sources.ts             HealthSource interface. Fitbit is real; Apple Health and
+                            Health Connect are typed stubs, never shown as connected
+    googleHealth.ts         OAuth+PKCE and dailyRollUp calls against the Google
+                            Health API (the Fitbit Web API's successor)
+    fitbitSync.ts           Client-side read-merge-write into DailyMetric by date;
+                            runs in the browser because LocalRepository has to
   store/
     repository.ts         The interface the whole app talks to
     localRepository.ts    localStorage implementation + STORE_EVENT
@@ -173,6 +333,49 @@ scripts/
   this itself". Do not convert it to an error.
 - **The no-diagnosis guard is not applied to `/api/explain-back`.** There the
   model relays what a doctor said, and a doctor may name a condition.
+- **`lib/i18n/messages.ts` translates display text only.** Anything stored
+  (`HealthEvent.label`, `onset`) or matched against `lib/ai/fallback.ts`'s
+  vocabulary (`BODY_PARTS`, `bodyLocation`) stays English at every layer —
+  only the label a component renders goes through `useT()`.
+- **`data-density="calm"` (Low Stimulation) is a separate concern from
+  `data-motion="reduced"`.** Motion controls animation; density controls how
+  much is on screen. Mark anything that should disappear under it with
+  `data-density-hide` in CSS rather than branching on `settings` in the
+  component — `ManualEntry`'s step wizard and `Tutorial`'s no-auto-open are
+  the only deliberate JS-level exceptions, because a modal that opens then
+  gets hidden still steals focus for a moment.
+- **One ElevenLabs voice everywhere.** `Speaker` ("patient"/"clinical") is
+  still threaded through `lib/voice/*` for shape-compatibility, but
+  `voiceIdFor()` ignores it — do not reintroduce a second voice id without
+  updating `app/clinician/page.tsx`'s single "Read this out loud" button and
+  `scripts/check-voice.ts` together.
+- **`missingFields` on an "ask" turn must come from `missingFieldsFor(draft)`,
+  not trusted from the LLM.** `lib/ai/assistant.ts`'s `runAssistantTurn()`
+  recomputes it whenever `action === "ask"` and a draft exists — the LLM
+  reliably asks a sensible question but reliably leaves `missingFields: []`,
+  and `AssistantPanel`'s inline `BodyPicker`/`SeverityScale` render off that
+  field. Found by driving the app with a live LLM key during this task; don't
+  revert to trusting the model's own `missingFields`.
+- **Body region ids are the contract between three pickers and the text
+  parser.** `lib/body/regions.ts`'s `BODY_REGIONS`, `Body3D`'s mesh
+  placements, `BodyRegionList`, the old 2D `BodyMap`, and
+  `lib/ai/fallback.ts`'s `BODY_PARTS` table all have to agree on the exact
+  same English strings (`"Left shoulder"`, not `"left_shoulder"` or
+  `"shoulder_left"`). Adding a region to one without the others breaks that
+  path silently — the picker will let you select it, but free-text mentions
+  of it won't resolve to the same value, or vice versa.
+- **The 3D body (`components/body/BodyScene.tsx`) is lazy-loaded via
+  `next/dynamic(..., { ssr: false })` and must stay that way.** Its runtime
+  `three`/`@react-three/fiber`/`@react-three/drei` imports stay behind it;
+  importing them anywhere that isn't behind that dynamic import will ship the
+  3D bundle to every route. `npm run build`'s per-route size table is the
+  check — `/body-picture` should stay near the other pages' First Load JS,
+  not balloon.
+- **`AccessibilityControls` (the actual toggles) is separate from
+  `AccessibilityPanel` (the popover chrome) on purpose.** The controls
+  component takes a `layout` prop and is reused nowhere else today, but if a
+  future screen needs the toggles inline again, extend layout rather than
+  copying the buttons.
 
 ## Environment variables
 
@@ -183,7 +386,31 @@ Everything is optional; see `.env.local.example`. What degrades without each:
 | `LLM_PROVIDER` + matching key | Assistant uses the rule-based parser; summaries use the deterministic builder; doctor Q&A uses the keyword matcher. Full demo still works. |
 | `ELEVENLABS_API_KEY` | Speech falls back to browser `SpeechSynthesis`; voice input falls back to `SpeechRecognition` (Chrome only). |
 | `ELEVENLABS_VOICE_ID` | A default voice is used. |
-| `ELEVENLABS_CLINICAL_VOICE_ID` | Doctor-facing playback reuses the patient voice, and the two speakers stop being audibly distinct. `npm run check-voice` warns about this. |
+| `ELEVENLABS_CLINICAL_VOICE_ID` | Recognized but unused — CareBridge uses one voice (`ELEVENLABS_VOICE_ID`) everywhere. |
+| `GOOGLE_HEALTH_CLIENT_ID` / `GOOGLE_HEALTH_CLIENT_SECRET` / `GOOGLE_HEALTH_REDIRECT_URI` | The home page shows "Fitbit — Setup required." Nothing else is affected. |
+
+## Hosting
+
+Deployed on Vercel, project `carebridge` under the `madalaabhay1-2226s-projects`
+scope — `vercel.json` pins `"framework": "nextjs"` (needed once the project was
+created via `vercel project add` rather than the normal auto-detected first
+deploy, or Vercel defaults to a static "public/" output and the build fails).
+Deployment protection (SSO) was disabled on this project so the preview URL is
+genuinely public, not gated behind a Vercel login.
+
+**This is a preview deployment, not production** — `vercel --prod` was blocked
+by this environment's own safety guardrail for production deploys, so nobody
+has promoted a build yet. The live preview URL is real and public but is tied
+to that one deployment; it won't auto-update on a future `git push` the way a
+production alias would. To promote it (or to wire up auto-deploy-on-push), run
+`vercel --prod` from a human session, or connect the Vercel project to a Git
+remote from the dashboard.
+
+No secrets were uploaded — `.env.local` is gitignored and untouched by the
+deploy, so the hosted copy runs the fully-supported keyless fallback path
+(rule-based assistant, browser speech) until someone adds
+`OPENAI_API_KEY`/`ELEVENLABS_API_KEY`/etc. as Environment Variables in the
+Vercel project settings.
 
 ## How to run
 
@@ -226,6 +453,26 @@ npm run rehearse     # walks the demo script against a running dev server
   browser permission prompt. Grant it before demoing. Typing is an equal path.
 - **`prefers-reduced-motion` is honoured**, but Low Stimulation is also a manual
   toggle because the OS setting is often unset on a borrowed laptop.
+- **The live LLM path sometimes writes `bodyLocation` outside `BodyMap`'s
+  vocabulary** (e.g. "stomach" instead of the canonical "Lower abdomen") even
+  though the deterministic fallback always uses the shared vocabulary —
+  `npm run rehearse` with a real key can fail the "location survived the
+  follow-up" check for this reason. This is a prompt-calibration gap in
+  `lib/ai/prompts.ts`, not something this task's changes touch or fix; the
+  fallback path (the one AGENTS.md treats as defensible) is unaffected —
+  confirmed by rehearsing once with `.env.local` renamed, which passes clean.
+- **Fitbit-via-Google-Health is built but not yet run against a real Google
+  account.** See item 1 under "Sensible next steps" above — the OAuth+PKCE
+  code, the `dailyRollUp` request shape, and the redirect-URI handling in
+  `app/api/fitbit/callback/route.ts` are all best-effort against Google's
+  current (thin, new-as-of-2026) docs, not verified against a live response.
+  Testing-mode OAuth tokens there also expire in 7 days, so "reauth required"
+  will be a normal, frequent state once real credentials exist, not a bug.
+- **The realistic body is a communication aid, not a medical segmentation model.**
+  Surface hit tests map to broad canonical regions using local coordinates and
+  face direction. The region list is the precise keyboard/screen-reader path.
+  Three.js materials read theme/high-contrast settings explicitly because they
+  cannot inherit CSS colors; this is an intentional styling exception.
 
 ## Demo script
 

@@ -73,8 +73,23 @@ function buildContext({ events, metrics, detection }: Context): string {
 
 type Matcher = {
   test: RegExp;
-  answer: (ctx: Context) => { text: string; ids: string[] } | null;
+  answer: (ctx: Context, question: string) => { text: string; ids: string[] } | null;
 };
+
+/*
+  Which symptom the doctor actually named, if any.
+
+  This matters more than it looks. "How bad is the pain?" answered with the
+  patient's worst FATIGUE score is a wrong answer given to a clinician on a
+  patient's behalf — the exact failure this whole surface exists to prevent.
+*/
+function categoryFromQuestion(question: string): string | undefined {
+  if (/\b(pain|hurt\w*|ache|aching|sore|cramp\w*|stomach|abdom\w*|head\w*)\b/i.test(question))
+    return "pain";
+  if (/\b(tired|fatigue\w*|exhaust\w*|energy)\b/i.test(question)) return "fatigue";
+  if (/\b(sick|nausea\w*|fever\w*|dizz\w*|unwell)\b/i.test(question)) return "illness";
+  return undefined;
+}
 
 /*
   "When did this start?" means this episode, not the whole record. Without a
@@ -154,12 +169,19 @@ const MATCHERS: Matcher[] = [
   {
     // How bad is it?
     test: /\b(how (?:bad|severe|strong|painful|much)|severity|pain level|scale|out of ten)\b/i,
-    answer: ({ events, detection }) => {
-      const s = topSymptom(events);
+    answer: ({ events, detection }, question) => {
+      const asked = categoryFromQuestion(question);
+      const s = topSymptom(events, asked);
       if (!s || s.severity === null) return null;
-      const change = describeSignal(detection, "painLevel");
+
+      // Report the change for the symptom that was asked about, not whichever
+      // metric happens to be listed first.
+      const change = describeSignal(
+        detection,
+        s.category === "fatigue" ? "fatigueLevel" : "painLevel",
+      );
       return {
-        text: `The worst I have recorded is ${s.severity} out of 10, for ${s.label.toLowerCase()}.${
+        text: `The worst ${s.label.toLowerCase()} I have recorded is ${s.severity} out of 10.${
           change ? ` ${change}` : ""
         }`,
         ids: [s.id],
@@ -269,7 +291,7 @@ const MATCHERS: Matcher[] = [
 export function fallbackAnswer(question: string, ctx: Context): GroundedAnswer {
   for (const m of MATCHERS) {
     if (!m.test.test(question)) continue;
-    const result = m.answer(ctx);
+    const result = m.answer(ctx, question);
     if (result) {
       return {
         answered: true,

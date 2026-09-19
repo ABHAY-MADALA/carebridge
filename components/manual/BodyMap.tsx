@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/a11y/useT";
 
 /*
   A body map for people who would rather point than describe.
@@ -8,11 +9,14 @@ import { cn } from "@/lib/utils";
   Every region is a real <button> with a label, so it works with a keyboard,
   with a screen reader, and with a finger. A picture that only works with a
   mouse would defeat the purpose of having one.
+
+  `id` is what gets stored as bodyLocation and matched by lib/ai/fallback.ts's
+  BODY_PARTS table — stays English always. Only the displayed label (read
+  from lib/i18n/messages.ts's bodyMap.regions) is translated.
 */
 
 type Region = {
   id: string;
-  label: string;
   /** Percentage box over the figure. */
   x: number;
   y: number;
@@ -21,23 +25,23 @@ type Region = {
 };
 
 const REGIONS: Region[] = [
-  { id: "Head", label: "Head", x: 38, y: 1, w: 24, h: 12 },
-  { id: "Throat", label: "Throat or neck", x: 42, y: 13, w: 16, h: 5 },
-  { id: "Chest", label: "Chest", x: 33, y: 18, w: 34, h: 13 },
-  { id: "Shoulder", label: "Shoulders", x: 17, y: 18, w: 16, h: 8 },
-  { id: "Arm", label: "Arms", x: 12, y: 26, w: 12, h: 22 },
-  { id: "Upper abdomen", label: "Upper stomach", x: 33, y: 31, w: 34, h: 9 },
-  { id: "Lower abdomen", label: "Lower stomach", x: 33, y: 40, w: 34, h: 10 },
-  { id: "Pelvis", label: "Hips or pelvis", x: 33, y: 50, w: 34, h: 8 },
-  { id: "Hand", label: "Hands", x: 10, y: 48, w: 12, h: 8 },
-  { id: "Leg", label: "Legs", x: 33, y: 58, w: 34, h: 22 },
-  { id: "Knee", label: "Knees", x: 33, y: 80, w: 34, h: 8 },
-  { id: "Foot", label: "Feet", x: 33, y: 88, w: 34, h: 10 },
+  { id: "Head", x: 38, y: 1, w: 24, h: 12 },
+  { id: "Throat", x: 42, y: 13, w: 16, h: 5 },
+  { id: "Chest", x: 33, y: 18, w: 34, h: 13 },
+  { id: "Shoulder", x: 17, y: 18, w: 16, h: 8 },
+  { id: "Arm", x: 12, y: 26, w: 12, h: 22 },
+  { id: "Upper abdomen", x: 33, y: 31, w: 34, h: 9 },
+  { id: "Lower abdomen", x: 33, y: 40, w: 34, h: 10 },
+  { id: "Pelvis", x: 33, y: 50, w: 34, h: 8 },
+  { id: "Hand", x: 10, y: 48, w: 12, h: 8 },
+  { id: "Leg", x: 33, y: 58, w: 34, h: 22 },
+  { id: "Knee", x: 33, y: 80, w: 34, h: 8 },
+  { id: "Foot", x: 33, y: 88, w: 34, h: 10 },
 ];
 
 const BACK_REGIONS: Region[] = [
-  { id: "Back", label: "Upper back", x: 33, y: 20, w: 34, h: 15 },
-  { id: "Lower back", label: "Lower back", x: 33, y: 35, w: 34, h: 13 },
+  { id: "Back", x: 33, y: 20, w: 34, h: 15 },
+  { id: "Lower back", x: 33, y: 35, w: 34, h: 13 },
 ];
 
 export function BodyMap({
@@ -47,15 +51,18 @@ export function BodyMap({
   value: string | null;
   onChange: (location: string) => void;
 }) {
+  const { t, tRaw } = useT();
+  const labels = tRaw<Record<string, string>>("bodyMap.regions");
+
   return (
     <div>
-      <p className="label">Where do you feel it?</p>
+      <p className="label">{t("bodyMap.whereFeel")}</p>
 
       <div className="mt-2 grid gap-4 sm:grid-cols-[minmax(0,14rem)_1fr]">
         <div
           className="relative mx-auto aspect-[1/2.2] w-full max-w-[14rem] rounded-2xl border-2 border-line bg-raised"
           role="group"
-          aria-label="Body picture"
+          aria-label={t("bodyMap.bodyPicture")}
         >
           {/* A simple figure drawn behind the buttons, purely decorative. */}
           <svg
@@ -90,7 +97,7 @@ export function BodyMap({
                 height: `${r.h}%`,
               }}
             >
-              <span className="sr-only">{r.label}</span>
+              <span className="sr-only">{labels[r.id] ?? r.id}</span>
             </button>
           ))}
         </div>
@@ -100,9 +107,7 @@ export function BodyMap({
           at all, and a list is faster for anyone who already knows the word.
         */}
         <div>
-          <p className="text-sm text-muted">
-            Tap the picture, or choose from the list.
-          </p>
+          <p className="text-sm text-muted">{t("bodyMap.tapOrChoose")}</p>
           <ul className="mt-2 flex flex-wrap gap-2">
             {[...REGIONS, ...BACK_REGIONS].map((r) => (
               <li key={r.id}>
@@ -115,7 +120,7 @@ export function BodyMap({
                     value === r.id ? "btn-primary" : "btn-secondary",
                   )}
                 >
-                  {r.label}
+                  {labels[r.id] ?? r.id}
                 </button>
               </li>
             ))}

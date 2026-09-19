@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/a11y/useT";
 
 /*
   A 0-10 scale with a face and a word on every step. A bare number line asks
@@ -9,33 +10,37 @@ import { cn } from "@/lib/utils";
 */
 
 const FACES = [
-  { face: "\u{1F642}", word: "None" },
-  { face: "\u{1F642}", word: "Barely there" },
-  { face: "\u{1F610}", word: "Mild" },
-  { face: "\u{1F610}", word: "Mild" },
-  { face: "\u{1F615}", word: "Uncomfortable" },
-  { face: "\u{1F615}", word: "Moderate" },
-  { face: "\u{1F623}", word: "Hard to ignore" },
-  { face: "\u{1F623}", word: "Bad" },
-  { face: "\u{1F630}", word: "Very bad" },
-  { face: "\u{1F62B}", word: "Awful" },
-  { face: "\u{1F62B}", word: "Worst possible" },
+  "\u{1F642}",
+  "\u{1F642}",
+  "\u{1F610}",
+  "\u{1F610}",
+  "\u{1F615}",
+  "\u{1F615}",
+  "\u{1F623}",
+  "\u{1F623}",
+  "\u{1F630}",
+  "\u{1F62B}",
+  "\u{1F62B}",
 ];
 
 export function SeverityScale({
   value,
   onChange,
-  label = "How strong is it?",
+  label,
 }: {
   value: number | null;
   onChange: (v: number) => void;
   label?: string;
 }) {
+  const { t, tRaw } = useT();
+  const words = tRaw<string[]>("severityScale.words");
+  const resolvedLabel = label ?? t("severityScale.defaultLabel");
+
   return (
     <fieldset>
-      <legend className="label">{label}</legend>
-      <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
-        {FACES.map((f, i) => (
+      <legend className="label">{resolvedLabel}</legend>
+      <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={resolvedLabel}>
+        {FACES.map((face, i) => (
           <button
             key={i}
             type="button"
@@ -50,15 +55,15 @@ export function SeverityScale({
             )}
           >
             <span aria-hidden className="text-2xl leading-none">
-              {f.face}
+              {face}
             </span>
             <span className="text-lg font-bold leading-none">{i}</span>
-            <span className="text-center text-[0.65rem] leading-tight">{f.word}</span>
+            <span className="text-center text-[0.65rem] leading-tight">{words[i]}</span>
           </button>
         ))}
       </div>
       <p className="mt-2 text-sm text-muted" aria-live="polite">
-        {value === null ? "Nothing chosen yet." : `You chose ${value} out of 10 — ${FACES[value].word.toLowerCase()}.`}
+        {value === null ? t("severityScale.nothingChosen") : t("severityScale.youChose", { value, word: words[value].toLowerCase() })}
       </p>
     </fieldset>
   );

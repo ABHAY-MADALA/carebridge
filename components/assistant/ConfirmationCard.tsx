@@ -2,7 +2,8 @@
 
 import { Check, Pencil } from "lucide-react";
 import type { DraftEvent } from "@/lib/schema";
-import { CATEGORY_EMOJI, severityFace, severityWord } from "@/lib/health/categories";
+import { CATEGORY_EMOJI, severityFace } from "@/lib/health/categories";
+import { useT } from "@/components/a11y/useT";
 
 /*
   "Here's what I understood."
@@ -21,13 +22,6 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-function formatDuration(mins: number) {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  if (!h) return `${m} minutes`;
-  return `${h}h ${String(m).padStart(2, "0")}m`;
-}
-
 export function ConfirmationCard({
   drafts,
   onSave,
@@ -39,10 +33,20 @@ export function ConfirmationCard({
   onRevise: () => void;
   saving: boolean;
 }) {
+  const { t, tRaw } = useT();
+  const severityWords = tRaw<string[]>("severityScale.words");
+
+  const formatDuration = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (!h) return t("confirmationCard.durationMinOnly", { m });
+    return t("confirmationCard.durationHM", { h, m: String(m).padStart(2, "0") });
+  };
+
   return (
     <section className="card fade-up border-2 border-brand p-5" aria-labelledby="understood">
       <h3 id="understood" className="text-xl font-bold">
-        Here&apos;s what I understood
+        {t("confirmationCard.heading")}
       </h3>
 
       <ul className="mt-4 space-y-4">
@@ -56,33 +60,33 @@ export function ConfirmationCard({
             <dl className="mt-2 space-y-1">
               {draft.severity !== null && draft.severity !== undefined && (
                 <Row
-                  label="How strong"
+                  label={t("confirmationCard.howStrong")}
                   value={
                     <span className="flex items-center gap-2">
                       <span aria-hidden className="text-xl">
                         {severityFace(draft.severity)}
                       </span>
                       {draft.severity}/10
-                      <span className="text-muted">({severityWord(draft.severity)})</span>
+                      <span className="text-muted">({severityWords[draft.severity]})</span>
                     </span>
                   }
                 />
               )}
-              {draft.bodyLocation && <Row label="Where" value={draft.bodyLocation} />}
-              {draft.onset && <Row label="Started" value={draft.onset} />}
-              {draft.pattern && <Row label="Pattern" value={draft.pattern} />}
+              {draft.bodyLocation && <Row label={t("confirmationCard.where")} value={draft.bodyLocation} />}
+              {draft.onset && <Row label={t("confirmationCard.started")} value={draft.onset} />}
+              {draft.pattern && <Row label={t("confirmationCard.pattern")} value={draft.pattern} />}
               {draft.durationMinutes ? (
-                <Row label="How long" value={formatDuration(draft.durationMinutes)} />
+                <Row label={t("confirmationCard.howLong")} value={formatDuration(draft.durationMinutes)} />
               ) : null}
               {draft.trendHint && (
                 <Row
-                  label="Compared with before"
+                  label={t("confirmationCard.comparedWithBefore")}
                   value={
                     draft.trendHint === "worse"
-                      ? "Getting worse"
+                      ? t("confirmationCard.worse")
                       : draft.trendHint === "better"
-                        ? "Getting better"
-                        : "About the same"
+                        ? t("confirmationCard.better")
+                        : t("confirmationCard.same")
                   }
                 />
               )}
@@ -92,13 +96,13 @@ export function ConfirmationCard({
               <div className="mt-3 border-l-4 border-line pl-3">
                 <p className="label">
                   {draft.inputLanguage && draft.inputLanguage !== "en"
-                    ? "Your words (original)"
-                    : "Your words"}
+                    ? t("confirmationCard.yourWordsOriginal")
+                    : t("confirmationCard.yourWords")}
                 </p>
                 <p className="italic">&ldquo;{draft.originalInput}&rdquo;</p>
                 {draft.translation && (
                   <>
-                    <p className="label mt-2">In English</p>
+                    <p className="label mt-2">{t("confirmationCard.inEnglish")}</p>
                     <p className="italic">&ldquo;{draft.translation}&rdquo;</p>
                   </>
                 )}
@@ -108,12 +112,12 @@ export function ConfirmationCard({
         ))}
       </ul>
 
-      <p className="mt-4 text-lg font-semibold">Is this correct?</p>
+      <p className="mt-4 text-lg font-semibold">{t("confirmationCard.isThisCorrect")}</p>
 
       <div className="mt-3 flex flex-wrap gap-3">
         <button type="button" className="btn btn-lg btn-primary" onClick={onSave} disabled={saving}>
           <Check className="h-5 w-5" aria-hidden />
-          {saving ? "Saving..." : "Yes, save this"}
+          {saving ? t("confirmationCard.saving") : t("confirmationCard.yesSave")}
         </button>
         <button
           type="button"
@@ -122,12 +126,12 @@ export function ConfirmationCard({
           disabled={saving}
         >
           <Pencil className="h-5 w-5" aria-hidden />
-          Change something
+          {t("confirmationCard.changeSomething")}
         </button>
       </div>
 
       <p className="mt-3 text-sm text-muted">
-        Nothing is saved until you choose to save it.
+        {t("confirmationCard.notSavedYet")}
       </p>
     </section>
   );

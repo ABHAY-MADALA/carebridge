@@ -33,17 +33,8 @@ if (provider) {
 console.log("\nElevenLabs");
 if (!elevenLabsKey()) {
   console.log("  NOT configured — speech falls back to the browser's own voice.");
-  console.log("  Speak for Me still works, but the two speakers sound less distinct.");
 } else {
-  console.log(`  patient voice:  ${voiceIdFor("patient")}`);
-  console.log(`  clinical voice: ${voiceIdFor("clinical")}`);
-
-  if (voiceIdFor("patient") === voiceIdFor("clinical")) {
-    console.log(
-      "  WARNING: both speakers use the same voice. Set ELEVENLABS_CLINICAL_VOICE_ID",
-    );
-    console.log("  so it is audibly clear who is talking in clinician mode.");
-  }
+  console.log(`  voice: ${voiceIdFor("patient")}`);
 
   const q = await quota();
   if (!q) {

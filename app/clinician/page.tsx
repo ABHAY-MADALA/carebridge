@@ -8,21 +8,28 @@ import { useSpeaker } from "@/components/voice/useSpeaker";
 import { VoiceAdvocate } from "@/components/clinician/VoiceAdvocate";
 import { QuickPhrases } from "@/components/clinician/QuickPhrases";
 import { DoctorSpeaks } from "@/components/clinician/DoctorSpeaks";
+import { HealthMetric } from "@/components/ui/HealthMetric";
+import { useT } from "@/components/a11y/useT";
 import { METRICS } from "@/lib/health/metrics";
-import { summaryToText } from "@/lib/health/summary";
+import { summaryToText, summaryForDisplay } from "@/lib/health/summary";
 import { relativeDays } from "@/lib/dates";
 
 /*
   Clinician mode. No assistant, no settings, no navigation to get lost in —
   the approved summary, the evidence behind it, and the patient's own words.
+  A one-page clinical handoff: restrained section rhythm (thin dividers, not
+  stacked bordered cards), because a doctor reading this on a tablet in an
+  exam room should be able to scan it in seconds.
 
   Clearly labelled as patient-generated information, because a doctor needs to
   know what they are reading before they read it.
 */
 
 export default function ClinicianPage() {
-  const { loading, summary, detection, events } = useHealthData();
+  const { loading, summary: storedSummary, detection, events } = useHealthData();
+  const summary = summaryForDisplay(storedSummary, events);
   const speech = useSpeaker();
+  const { t } = useT();
 
   const included = summary?.sections.filter((s) => s.included) ?? [];
   const fullText = summary ? summaryToText(summary, { intro: true }) : "";
@@ -33,86 +40,63 @@ export default function ClinicianPage() {
   }, [summary?.approved, fullText, speech]);
 
   if (loading) {
-    return <p className="text-muted">Loading...</p>;
+    return <p className="text-muted">{t("clinician.loading")}</p>;
   }
 
   if (!summary?.approved) {
     return (
-      <div className="card p-6">
-        <h1 className="text-2xl font-bold">Nothing has been approved to share yet</h1>
-        <p className="mt-2 text-lg text-muted">
-          This page only shows a summary the patient has read and approved. Nothing is
-          shared without that.
-        </p>
+      <div className="rounded-2xl border border-line bg-surface p-6">
+        <h1 className="text-xl font-semibold text-ink">{t("clinician.notApprovedTitle")}</h1>
+        <p className="mt-2 text-base text-muted">{t("clinician.notApprovedBody")}</p>
         <Link href="/explain" className="btn btn-lg btn-primary mt-4">
           <ArrowLeft className="h-5 w-5" aria-hidden />
-          Go to Help Me Explain
+          {t("clinician.goToExplain")}
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <header className="border-b-2 border-line pb-4">
-        <p className="label">Patient-generated health information</p>
-        <h1 className="mt-1 text-3xl font-bold md:text-4xl">Alex &mdash; health summary</h1>
-        <p className="mt-1 text-muted">
-          Recorded by the patient over time and organized by CareBridge. Approved by the
-          patient {relativeDays(summary.approvedAt ?? summary.generatedAt)}. Not a
-          diagnosis.
+    <div className="mx-auto max-w-3xl space-y-8">
+      <header className="border-b border-line pb-5">
+        <p className="label">{t("clinician.patientGenerated")}</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-[1.75rem]">
+          {t("nav.clinician")}
+        </h1>
+        <p className="mt-1 text-muted">{t("clinician.header")}</p>
+        <p className="mt-1 text-sm text-muted">
+          {t("clinician.approvedLine", { when: relativeDays(summary.approvedAt ?? summary.generatedAt) })}
         </p>
       </header>
 
       {/* Whatever is being spoken is always on screen, with who is speaking. */}
       {speech.spokenText && (
-        <section
-          aria-live="polite"
-          className="card border-2 border-brand bg-brand-soft p-5"
-        >
+        <section aria-live="polite" className="rounded-2xl border border-brand/40 bg-brand-soft p-5">
           <p className="label flex items-center gap-2">
             <Volume2 className="h-4 w-4" aria-hidden />
-            {speech.speaker === "clinical"
-              ? "CareBridge is reading the record to the doctor"
-              : "CareBridge is speaking for the patient"}
-            {speech.engine === "browser" && (
-              <span className="normal-case text-muted">(browser voice)</span>
-            )}
+            {t("clinician.speaking")}
+            {speech.engine === "browser" && <span className="normal-case text-muted">{t("clinician.browserVoice")}</span>}
           </p>
-          <p className="mt-2 whitespace-pre-line text-lg">{speech.spokenText}</p>
-          <button type="button" className="btn btn-md btn-secondary mt-3" onClick={speech.stop}>
-            <Square className="h-4 w-4" aria-hidden />
-            Stop
+          <p className="mt-2 whitespace-pre-line text-base">{speech.spokenText}</p>
+          <button type="button" className="btn btn-sm btn-secondary mt-3" onClick={speech.stop}>
+            <Square className="h-3.5 w-3.5" aria-hidden />
+            {t("explain.stop")}
           </button>
         </section>
       )}
 
-      {/* --- Two voices, deliberately distinct ------------------------------ */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-4">
         <button
           type="button"
           className="btn btn-lg btn-primary"
           onClick={() => (speech.speaking ? speech.stop() : void speech.speak(fullText))}
         >
           <Volume2 className="h-5 w-5" aria-hidden />
-          Speak for Me
+          {t("clinician.readOutLoud")}
         </button>
 
-        <button
-          type="button"
-          className="btn btn-lg btn-secondary"
-          onClick={() =>
-            speech.speaking
-              ? speech.stop()
-              : void speech.speak(fullText, { speaker: "clinical" })
-          }
-        >
-          <Volume2 className="h-5 w-5" aria-hidden />
-          Read this to me
-        </button>
-
-        <label className="flex items-center gap-2">
-          <span className="label">Speed</span>
+        <label className="flex items-center gap-2 text-sm">
+          <span className="label">{t("clinician.speed")}</span>
           <input
             type="range"
             min={0.6}
@@ -120,111 +104,90 @@ export default function ClinicianPage() {
             step={0.1}
             value={speech.rate}
             onChange={(e) => speech.setRate(Number(e.target.value))}
-            aria-label="Speaking speed"
+            aria-label={t("explain.speakingSpeed")}
           />
         </label>
       </div>
-      <p className="text-sm text-muted">
-        &ldquo;Speak for Me&rdquo; speaks as the patient. &ldquo;Read this to me&rdquo;
-        reads the record to you in a different voice, so it is always clear who is
-        talking.
-      </p>
 
       {/* --- The summary, section by section, each replayable -------------- */}
-      <section aria-labelledby="summary-heading">
-        <h2 id="summary-heading" className="text-2xl font-bold">
-          Summary
+      <section aria-labelledby="summary-heading" className="border-t border-line pt-8">
+        <h2 id="summary-heading" className="text-lg font-semibold text-ink">
+          {t("clinician.summaryHeading")}
         </h2>
-        <ul className="mt-3 space-y-4">
+        <div className="mt-3 divide-y divide-line">
           {included.map((s) => (
-            <li key={s.id} className="card p-4">
+            <div key={s.id} className="py-4 first:pt-0">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-lg font-bold">{s.heading}</h3>
+                <h3 className="font-semibold text-ink">{s.heading}</h3>
                 <button
                   type="button"
-                  className="btn btn-sm btn-ghost"
-                  onClick={() =>
-                    void speech.speak(`${s.heading}. ${s.body.replace(/^- /gm, "")}`, {
-                      speaker: "clinical",
-                    })
-                  }
+                  className="btn btn-sm btn-ghost !min-h-[2.25rem]"
+                  onClick={() => void speech.speak(`${s.heading}. ${s.body.replace(/^- /gm, "")}`)}
                 >
-                  <Volume2 className="h-4 w-4" aria-hidden />
-                  Read this part
+                  <Volume2 className="h-3.5 w-3.5" aria-hidden />
+                  {t("clinician.readThisPart")}
                 </button>
               </div>
-              <p className="mt-2 whitespace-pre-line text-base">{s.body}</p>
-            </li>
+              <p className="mt-1.5 whitespace-pre-line text-base leading-relaxed text-ink">{s.body}</p>
+            </div>
           ))}
-        </ul>
+        </div>
       </section>
 
       {/* --- The measurements behind it ------------------------------------ */}
       {detection && detection.evaluated.length > 0 && (
-        <section className="card p-5" aria-labelledby="measurements-heading">
-          <h2 id="measurements-heading" className="text-2xl font-bold">
-            Measurements
+        <section aria-labelledby="measurements-heading" className="border-t border-line pt-8">
+          <h2 id="measurements-heading" className="text-lg font-semibold text-ink">
+            {t("clinician.measurementsHeading")}
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Last {detection.windowDays} days against the patient&apos;s own baseline
-            {detection.signals[0]?.baselineSource === "cycle-phase"
-              ? ` for the same ${detection.phase} phase of previous cycles (n=${detection.signals[0].n})`
-              : ""}
-            .
+            {t("clinician.measurementsSubtitle", {
+              days: detection.windowDays,
+              phaseNote:
+                detection.signals[0]?.baselineSource === "cycle-phase"
+                  ? t("clinician.measurementsPhaseNote", {
+                      phase: detection.phase ? t(`insights.phase.${detection.phase}`) : "",
+                      n: detection.signals[0].n,
+                    })
+                  : "",
+            })}
           </p>
 
-          <table className="mt-4 w-full text-left">
-            <thead>
-              <tr className="border-b-2 border-line">
-                <th scope="col" className="py-2 pr-3">Measurement</th>
-                <th scope="col" className="py-2 pr-3">Baseline</th>
-                <th scope="col" className="py-2 pr-3">Recent</th>
-                <th scope="col" className="py-2">Change</th>
-              </tr>
-            </thead>
-            <tbody>
-              {detection.evaluated.map((s) => {
-                const meta = METRICS[s.metric];
-                const isSignal = detection.signals.some((x) => x.metric === s.metric);
-                return (
-                  <tr key={s.metric} className="border-b border-line last:border-0">
-                    <th scope="row" className="py-2 pr-3 font-semibold">
-                      {meta.label}
-                    </th>
-                    <td className="py-2 pr-3">{meta.format(s.baselineValue)}</td>
-                    <td className={isSignal ? "py-2 pr-3 font-bold" : "py-2 pr-3"}>
-                      {meta.format(s.currentValue)}
-                    </td>
-                    <td className="py-2">
-                      {isSignal
-                        ? `${s.deltaPct > 0 ? "+" : ""}${s.deltaPct.toFixed(0)}% (z=${s.z.toFixed(1)})`
-                        : "no material change"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="mt-3">
+            {detection.evaluated.map((s) => {
+              const meta = METRICS[s.metric];
+              const isSignal = detection.signals.some((x) => x.metric === s.metric);
+              return (
+                <HealthMetric
+                  key={s.metric}
+                  label={meta.label}
+                  usual={meta.format(s.baselineValue)}
+                  recent={meta.format(s.currentValue)}
+                  delta={isSignal ? `${s.deltaPct > 0 ? "+" : ""}${s.deltaPct.toFixed(0)}% (z=${s.z.toFixed(1)})` : t("clinician.noMaterialChange")}
+                  adverse={isSignal}
+                  emphasize={isSignal}
+                />
+              );
+            })}
+          </div>
         </section>
       )}
 
       {/* --- Verbatim patient statements ----------------------------------- */}
       {summary.quotedStatements.length > 0 && (
-        <section className="card p-5" aria-labelledby="verbatim-heading">
-          <h2 id="verbatim-heading" className="flex items-center gap-2 text-2xl font-bold">
-            <Quote className="h-5 w-5" aria-hidden />
-            Patient&apos;s own words
+        <section aria-labelledby="verbatim-heading" className="border-t border-line pt-8">
+          <h2 id="verbatim-heading" className="flex items-center gap-2 text-lg font-semibold text-ink">
+            <Quote className="h-4 w-4" aria-hidden />
+            {t("clinician.quotesHeading")}
           </h2>
-          <p className="mt-1 text-sm text-muted">
-            Unedited and untranslated, as recorded.
-          </p>
+          <p className="mt-1 text-sm text-muted">{t("clinician.quotesSubtitle")}</p>
           <ul className="mt-3 space-y-3">
             {summary.quotedStatements.map((q, i) => (
-              <li key={i} className="border-l-4 border-line pl-3">
-                <p className="italic">&ldquo;{q.text}&rdquo;</p>
+              <li key={i} className="border-l-2 border-line pl-3">
+                <p className="italic text-ink">&ldquo;{q.text}&rdquo;</p>
                 <p className="text-sm text-muted">
                   {new Date(q.when).toLocaleString("en-US")}
-                  {q.language !== "en" && ` \u00B7 spoken in ${q.language}`}
+                  {q.language !== "en" && t("explain.saidIn", { lang: q.language })}
                 </p>
               </li>
             ))}
@@ -232,15 +195,13 @@ export default function ClinicianPage() {
         </section>
       )}
 
-      <VoiceAdvocate speech={speech} />
-      <QuickPhrases speech={speech} />
-      <DoctorSpeaks speech={speech} />
+      <div className="divide-y divide-line border-t border-line [&>*]:pt-8 [&>*:first-child]:pt-8">
+        <VoiceAdvocate speech={speech} />
+        <QuickPhrases speech={speech} />
+        <DoctorSpeaks speech={speech} />
+      </div>
 
-      <p className="text-sm text-muted">
-        {events.length} entries recorded by the patient. CareBridge organizes
-        patient-reported information and compares it with the patient&apos;s own history.
-        It does not diagnose.
-      </p>
+      <p className="text-sm text-muted">{t("clinician.footer", { count: events.length })}</p>
     </div>
   );
 }

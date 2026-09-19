@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Eye, EyeOff, Pencil, X } from "lucide-react";
 import type { DoctorSummary, SummarySection } from "@/lib/schema";
+import { useT } from "@/components/a11y/useT";
 import { cn } from "@/lib/utils";
 
 /*
@@ -11,6 +12,10 @@ import { cn } from "@/lib/utils";
   They can reword any section, drop anything they would rather not share, and
   nothing leaves this screen until they approve it. Excluded sections are hidden
   rather than deleted, so changing their mind costs one click.
+
+  A flowing document — thin dividers between sections, not a stack of
+  bordered cards — with a quiet visibility toggle rather than a loud
+  "don't share" button on every row.
 */
 
 export function SummaryEditor({
@@ -24,6 +29,7 @@ export function SummaryEditor({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [buffer, setBuffer] = useState("");
+  const { t } = useT();
 
   const patch = (id: string, changes: Partial<SummarySection>) =>
     onChange({
@@ -41,63 +47,45 @@ export function SummaryEditor({
   };
 
   return (
-    <ul className="space-y-4">
+    <div className="divide-y divide-line rounded-2xl border border-line bg-surface">
       {summary.sections.map((section) => {
         const editing = editingId === section.id;
 
         return (
-          <li
-            key={section.id}
-            className={cn(
-              "card p-4",
-              !section.included && "border-dashed opacity-60",
-            )}
-          >
+          <div key={section.id} className={cn("p-5", !section.included && "opacity-50")}>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-lg font-bold">{section.heading}</h3>
+              <h3 className="font-semibold text-ink">{section.heading}</h3>
 
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-ghost"
-                  onClick={() => patch(section.id, { included: !section.included })}
-                  disabled={disabled}
-                >
-                  {section.included ? (
-                    <>
-                      <EyeOff className="h-4 w-4" aria-hidden />
-                      Don&apos;t share this
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-4 w-4" aria-hidden />
-                      Share this again
-                    </>
-                  )}
-                </button>
-
+              <div className="flex flex-wrap items-center gap-1">
                 {section.included && !editing && (
                   <button
                     type="button"
-                    className="btn btn-sm btn-secondary"
+                    className="btn btn-sm btn-ghost !min-h-[2.25rem] px-2"
                     onClick={() => startEdit(section)}
                     disabled={disabled}
                   >
-                    <Pencil className="h-4 w-4" aria-hidden />
-                    Edit
+                    <Pencil className="h-3.5 w-3.5" aria-hidden />
+                    {t("summaryEditor.edit")}
                   </button>
                 )}
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost !min-h-[2.25rem] px-2"
+                  onClick={() => patch(section.id, { included: !section.included })}
+                  disabled={disabled}
+                  aria-label={section.included ? t("summaryEditor.dontShare") : t("summaryEditor.shareAgain")}
+                >
+                  {section.included ? <EyeOff className="h-3.5 w-3.5" aria-hidden /> : <Eye className="h-3.5 w-3.5" aria-hidden />}
+                </button>
               </div>
             </div>
 
             {!section.included ? (
-              <p className="mt-2 text-muted">
-                This will not be shown to your doctor.
-              </p>
+              <p className="mt-2 text-sm italic text-muted">{t("summaryEditor.notShown")}</p>
             ) : editing ? (
               <div className="mt-3">
                 <label htmlFor={`edit-${section.id}`} className="label">
-                  Your words
+                  {t("summaryEditor.yourWords")}
                 </label>
                 <textarea
                   id={`edit-${section.id}`}
@@ -108,31 +96,27 @@ export function SummaryEditor({
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className="btn btn-md btn-primary"
+                    className="btn btn-sm btn-primary"
                     onClick={() => {
                       patch(section.id, { body: buffer });
                       setEditingId(null);
                     }}
                   >
-                    <Check className="h-4 w-4" aria-hidden />
-                    Keep this change
+                    <Check className="h-3.5 w-3.5" aria-hidden />
+                    {t("summaryEditor.keepChange")}
                   </button>
-                  <button
-                    type="button"
-                    className="btn btn-md btn-secondary"
-                    onClick={() => setEditingId(null)}
-                  >
-                    <X className="h-4 w-4" aria-hidden />
-                    Cancel
+                  <button type="button" className="btn btn-sm btn-secondary" onClick={() => setEditingId(null)}>
+                    <X className="h-3.5 w-3.5" aria-hidden />
+                    {t("summaryEditor.cancel")}
                   </button>
                 </div>
               </div>
             ) : (
-              <p className="mt-2 whitespace-pre-line text-base">{section.body}</p>
+              <p className="mt-2 whitespace-pre-line text-base leading-relaxed text-ink">{section.body}</p>
             )}
-          </li>
+          </div>
         );
       })}
-    </ul>
+    </div>
   );
 }

@@ -17,22 +17,42 @@ import type { AssistantTurn, Category, DraftEvent, TrendHint } from "@/lib/schem
 // Vocabulary
 // ---------------------------------------------------------------------------
 
+/*
+  Left/right variants are listed before their generic counterpart (first
+  match wins) so "left shoulder" resolves to "Left shoulder", not the
+  side-less "Shoulder" a bare "shoulder" still maps to. These exact strings
+  are also what components/body/Body3D.tsx's region picker emits — the two
+  input paths (text and the 3D picker) share one vocabulary.
+*/
 const BODY_PARTS: { match: RegExp; location: string }[] = [
   { match: /\b(?:lower (?:stomach|abdomen|belly|tummy)|lower abdominal)\b/i, location: "Lower abdomen" },
   { match: /\b(?:upper (?:stomach|abdomen|belly))\b/i, location: "Upper abdomen" },
   { match: /\b(?:stomach|abdomen|abdominal|belly|tummy|gut)\b/i, location: "Abdomen" },
   { match: /\b(?:vientre|barriga|est[oó]mago|abdomen)\b/i, location: "Abdomen" },
   { match: /\b(?:lower back|lumbar)\b/i, location: "Lower back" },
+  { match: /\b(?:upper back)\b/i, location: "Back" },
   { match: /\b(?:back|espalda)\b/i, location: "Back" },
   { match: /\b(?:head|forehead|temple|cabeza)\b/i, location: "Head" },
   { match: /\b(?:chest|pecho)\b/i, location: "Chest" },
   { match: /\b(?:neck|cuello)\b/i, location: "Neck" },
+  { match: /\b(?:left shoulder|hombro izquierdo)\b/i, location: "Left shoulder" },
+  { match: /\b(?:right shoulder|hombro derecho)\b/i, location: "Right shoulder" },
   { match: /\b(?:shoulder|hombro)\b/i, location: "Shoulder" },
+  { match: /\b(?:left arm|brazo izquierdo)\b/i, location: "Left arm" },
+  { match: /\b(?:right arm|brazo derecho)\b/i, location: "Right arm" },
   { match: /\b(?:arm|brazo)\b/i, location: "Arm" },
+  { match: /\b(?:left hand|left wrist|mano izquierda)\b/i, location: "Left hand" },
+  { match: /\b(?:right hand|right wrist|mano derecha)\b/i, location: "Right hand" },
   { match: /\b(?:hand|wrist|mano)\b/i, location: "Hand" },
   { match: /\b(?:hip|pelvis|pelvic|cadera)\b/i, location: "Pelvis" },
+  { match: /\b(?:left leg|left thigh|pierna izquierda)\b/i, location: "Left leg" },
+  { match: /\b(?:right leg|right thigh|pierna derecha)\b/i, location: "Right leg" },
   { match: /\b(?:leg|thigh|pierna)\b/i, location: "Leg" },
+  { match: /\b(?:left knee|rodilla izquierda)\b/i, location: "Left knee" },
+  { match: /\b(?:right knee|rodilla derecha)\b/i, location: "Right knee" },
   { match: /\b(?:knee|rodilla)\b/i, location: "Knee" },
+  { match: /\b(?:left foot|left ankle|pie izquierdo)\b/i, location: "Left foot" },
+  { match: /\b(?:right foot|right ankle|pie derecho)\b/i, location: "Right foot" },
   { match: /\b(?:foot|feet|ankle|pie)\b/i, location: "Foot" },
   { match: /\b(?:throat|garganta)\b/i, location: "Throat" },
   { match: /\b(?:ear|o[ií]do)\b/i, location: "Ear" },

@@ -7,12 +7,19 @@ import { useHealthData } from "@/components/health/useHealthData";
 import { ChangeBanner } from "@/components/insights/ChangeBanner";
 import { WhyAmISeeingThis } from "@/components/insights/WhyAmISeeingThis";
 import { MetricChart } from "@/components/insights/MetricChart";
+import { CalmMeasurement } from "@/components/insights/CalmMeasurement";
+import { useSettings } from "@/components/a11y/SettingsProvider";
 import { HelpTip } from "@/components/HelpTip";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { useT } from "@/components/a11y/useT";
 import { METRICS, METRIC_ORDER } from "@/lib/health/metrics";
 import { baselineByPhase } from "@/lib/health/baseline";
 
 export default function InsightsPage() {
   const { loading, metrics, detection, baseline } = useHealthData();
+  const { t, lang } = useT();
+  const { settings } = useSettings();
 
   // Pain by cycle phase is the clearest illustration of why a flat average
   // would be misleading for this patient.
@@ -32,68 +39,52 @@ export default function InsightsPage() {
   const currentPhaseBaseline = baseline?.painLevel ?? null;
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-center gap-2">
-        <h1 className="text-3xl font-bold md:text-4xl">Health Changes</h1>
-        <HelpTip topic="changes" />
-      </header>
+    <div>
+      <PageHeader title={t("insights.heading")} actions={<HelpTip topic="changes" />} />
 
       {loading ? (
-        <p className="text-muted">Working out your usual pattern...</p>
+        <p className="text-muted">{t("insights.working")}</p>
       ) : (
-        <>
+        <div className="space-y-10">
           {detection?.triggered ? (
             <ChangeBanner detection={detection} showLink={false} />
           ) : (
-            <section className="card flex flex-wrap items-center gap-3 border-2 p-5">
-              <CheckCircle2 className="h-7 w-7 text-good" aria-hidden />
+            <section className="flex flex-wrap items-start gap-3 rounded-2xl border border-good/30 bg-brand-soft/40 p-5">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-good" aria-hidden />
               <div>
-                <h2 className="text-xl font-bold">Nothing unusual right now</h2>
-                <p className="text-muted">
-                  Your recent days look like your own usual pattern. CareBridge will tell
-                  you if several things move away from it at the same time.
-                </p>
+                <h2 className="text-lg font-semibold text-ink">{t("insights.nothingUnusualTitle")}</h2>
+                <p className="mt-0.5 text-sm text-muted">{t("insights.nothingUnusualBody")}</p>
+                {detection && <WhyAmISeeingThis detection={detection} />}
               </div>
-              {detection && <WhyAmISeeingThis detection={detection} />}
             </section>
           )}
 
           {/* --- Why the cycle phase matters ------------------------------ */}
-          <section className="card p-5" aria-labelledby="baseline-heading">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 id="baseline-heading" className="text-2xl font-bold">
-                What is normal for you
-              </h2>
-              <HelpTip topic="cyclePhase" />
-            </div>
-
-            <p className="mt-2 text-lg">
-              CareBridge does not compare you with other people. It compares you with
-              yourself &mdash; and because some symptoms move with your cycle, it compares
-              this week with the <strong>same part</strong> of your previous cycles.
-            </p>
+          <section aria-labelledby="baseline-heading" className="border-t border-line pt-8">
+            <SectionHeader id="baseline-heading" title={t("insights.normalHeading")} action={<HelpTip topic="cyclePhase" />} />
+            <p className="max-w-2xl text-base text-muted">{t("insights.normalBody")}</p>
 
             {painByPhase.length > 0 && (
               <>
-                <h3 className="mt-5 text-lg font-bold">Your usual pain, by cycle phase</h3>
-                <ul className="mt-2 space-y-2">
+                <h3 className="mt-6 text-sm font-semibold text-ink">{t("insights.usualPainHeading")}</h3>
+                <ul className="mt-3 space-y-2.5">
                   {painByPhase.map((p) => {
                     const pct = (p.mean / 10) * 100;
                     const isCurrent = p.phase === detection?.phase;
                     return (
                       <li key={p.phase} className="flex items-center gap-3">
-                        <span className="w-24 shrink-0 text-sm font-semibold capitalize">
-                          {p.phase}
+                        <span className="w-24 shrink-0 text-sm font-medium text-ink">
+                          {t(`insights.phase.${p.phase}`)}
                         </span>
-                        <span className="h-6 flex-1 overflow-hidden rounded-full bg-raised">
+                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-raised">
                           <span
-                            className={isCurrent ? "block h-full bg-brand" : "block h-full bg-muted"}
+                            className={isCurrent ? "block h-full rounded-full bg-brand" : "block h-full rounded-full bg-line"}
                             style={{ width: `${pct}%` }}
                           />
                         </span>
-                        <span className="w-28 shrink-0 text-sm">
+                        <span className="w-28 shrink-0 text-sm text-muted">
                           {METRICS.painLevel.format(p.mean)}
-                          {isCurrent && <span className="ml-1 font-semibold">(now)</span>}
+                          {isCurrent && <span className="ml-1 font-semibold text-ink">{t("insights.now")}</span>}
                         </span>
                       </li>
                     );
@@ -101,14 +92,14 @@ export default function InsightsPage() {
                 </ul>
 
                 {flatPainAverage !== null && currentPhaseBaseline && (
-                  <p className="mt-4 rounded-xl bg-brand-soft p-4">
-                    A simple 30-day average of your pain would be{" "}
-                    <strong>{METRICS.painLevel.format(flatPainAverage)}</strong>, but during
-                    your <strong>{detection?.phase}</strong> phase your usual level is
-                    actually{" "}
-                    <strong>{METRICS.painLevel.format(currentPhaseBaseline.mean)}</strong>.
-                    Using the flat average would make an ordinary week look like a change.
-                    That is why CareBridge compares cycle phase to cycle phase.
+                  <p className="mt-4 rounded-xl bg-brand-soft p-4 text-sm text-ink">
+                    {t("insights.flatAveragePre")}{" "}
+                    <strong>{METRICS.painLevel.format(flatPainAverage)}</strong>
+                    {t("insights.flatAverageMid")}{" "}
+                    <strong>{detection?.phase ? t(`insights.phase.${detection.phase}`) : ""}</strong>{" "}
+                    {t("insights.flatAveragePhaseSuffix")}{" "}
+                    <strong>{METRICS.painLevel.format(currentPhaseBaseline.mean)}</strong>
+                    {t("insights.flatAveragePost")}
                   </p>
                 )}
               </>
@@ -116,33 +107,25 @@ export default function InsightsPage() {
           </section>
 
           {/* --- The measurements themselves ------------------------------ */}
-          <section className="card p-5" aria-labelledby="charts-heading">
-            <h2 id="charts-heading" className="text-2xl font-bold">
-              Your measurements
-            </h2>
-            <p className="mt-1 text-muted">
-              The dotted line is your own usual level for this part of your cycle.
-            </p>
+          <section aria-labelledby="charts-heading" className="border-t border-line pt-8">
+            <SectionHeader id="charts-heading" title={t("insights.measurementsHeading")} description={settings.lowStimulation ? (lang === "es" ? `Tu nivel habitual comparado con el promedio de los últimos ${detection?.windowDays ?? 4} días registrados.` : `Your usual level compared with the average of the last ${detection?.windowDays ?? 4} recorded days.`) : t("insights.measurementsSubtitle")} />
 
-            <div className="mt-5 grid gap-6 md:grid-cols-2">
+            <div className="measurement-grid grid gap-x-6 gap-y-4 md:grid-cols-2">
               {METRIC_ORDER.map((key) => (
-                <MetricChart
-                  key={key}
-                  metric={key}
-                  metrics={metrics}
-                  baselineValue={baseline?.[key]?.mean ?? null}
-                />
+                settings.lowStimulation
+                  ? <CalmMeasurement key={key} metric={key} metrics={metrics} baselineValue={baseline?.[key]?.mean ?? null} days={detection?.windowDays ?? 4} />
+                  : <MetricChart key={key} metric={key} metrics={metrics} baselineValue={baseline?.[key]?.mean ?? null} />
               ))}
             </div>
           </section>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 border-t border-line pt-8">
             <Link href="/explain" className="btn btn-lg btn-primary">
-              Help me explain this to my doctor
+              {t("insights.helpMeExplain")}
               <ArrowRight className="h-5 w-5" aria-hidden />
             </Link>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

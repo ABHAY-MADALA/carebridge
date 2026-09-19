@@ -52,11 +52,24 @@ async function fetchAudioUrl(text: string, speaker: Speaker): Promise<string | n
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ text, speaker }),
       });
-      if (!res.ok) {
+      /*
+        204 means "I cannot speak this, you speak it" — the route's way of
+        reporting a missing key, a quota exhaustion, or an upstream error.
+        It must be treated as no-audio even though fetch considers 2xx a
+        success, or we cache an empty blob and every later attempt at the same
+        text fails to decode before falling back.
+      */
+      if (!res.ok || res.status === 204) {
         elevenLabsAvailable = false;
         return null;
       }
+
       const blob = await res.blob();
+      if (blob.size === 0) {
+        elevenLabsAvailable = false;
+        return null;
+      }
+
       const url = URL.createObjectURL(blob);
       cache.set(key, url);
       elevenLabsAvailable = true;

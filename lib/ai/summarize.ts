@@ -57,7 +57,7 @@ export async function polishSummary(summary: DoctorSummary): Promise<DoctorSumma
     ...summary,
     source: "llm",
     sections: summary.sections.map((s) => {
-      if (!s.included) return s;
+      if (!s.included || s.id === "started") return s;
       const idx = included.findIndex((x) => x.id === s.id);
       const next = rewritten[idx];
       return next ? { ...s, heading: next.heading, body: next.body } : s;

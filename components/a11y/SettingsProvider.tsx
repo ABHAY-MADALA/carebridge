@@ -13,6 +13,7 @@ export type TextSize = "sm" | "base" | "lg" | "xl";
 export type Language = "en" | "es";
 
 export type Settings = {
+  theme: "light" | "dark";
   textSize: TextSize;
   highContrast: boolean;
   lowStimulation: boolean;
@@ -21,6 +22,7 @@ export type Settings = {
 };
 
 export const DEFAULT_SETTINGS: Settings = {
+  theme: "dark",
   textSize: "base",
   highContrast: false,
   lowStimulation: false,
@@ -42,9 +44,14 @@ const SettingsContext = createContext<Ctx | null>(null);
 
 function applyToDocument(s: Settings) {
   const el = document.documentElement;
+  el.dataset.theme = s.theme === "light" ? "light" : "dark";
   el.dataset.textsize = s.textSize;
   el.dataset.contrast = s.highContrast ? "high" : "normal";
   el.dataset.motion = s.lowStimulation ? "reduced" : "full";
+  // Separate from data-motion on purpose: motion controls animation, density
+  // controls how much is on screen at once. globals.css hides anything
+  // marked [data-density-hide] under "calm".
+  el.dataset.density = s.lowStimulation ? "calm" : "full";
   el.lang = s.language;
 }
 

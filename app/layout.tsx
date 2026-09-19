@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { SettingsProvider, SETTINGS_KEY } from "@/components/a11y/SettingsProvider";
-import { AccessibilityBar } from "@/components/a11y/AccessibilityBar";
-import { SiteNav } from "@/components/SiteNav";
+import { Chrome } from "@/components/Chrome";
 import { HealthDataProvider } from "@/components/health/useHealthData";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "CareBridge",
@@ -17,16 +23,27 @@ const noFlash = `
 (function(){try{
   var s=JSON.parse(localStorage.getItem(${JSON.stringify(SETTINGS_KEY)})||"{}");
   var e=document.documentElement;
+  e.dataset.theme=s.theme==="light"?"light":"dark";
   e.dataset.textsize=s.textSize||"base";
   e.dataset.contrast=s.highContrast?"high":"normal";
   e.dataset.motion=s.lowStimulation?"reduced":"full";
+  e.dataset.density=s.lowStimulation?"calm":"full";
   if(s.language)e.lang=s.language;
 }catch(_){}})();
 `;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-textsize="base" data-contrast="normal" data-motion="full">
+    <html
+      suppressHydrationWarning
+      data-theme="dark"
+      lang="en"
+      data-textsize="base"
+      data-contrast="normal"
+      data-motion="full"
+      data-density="full"
+      className={inter.variable}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: noFlash }} />
       </head>
@@ -36,17 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a className="skip-link" href="#main">
               Skip to main content
             </a>
-            <AccessibilityBar />
-            <SiteNav />
-            <main id="main" className="mx-auto max-w-6xl px-4 py-6 md:py-10">
-              {children}
-            </main>
-            <footer className="mx-auto max-w-6xl px-4 pb-12 pt-4">
-              <p className="text-sm text-muted">
-                CareBridge organizes what you record and compares it with your own past
-                patterns. It does not diagnose conditions or give medical advice.
-              </p>
-            </footer>
+            <Chrome>{children}</Chrome>
           </HealthDataProvider>
         </SettingsProvider>
       </body>
