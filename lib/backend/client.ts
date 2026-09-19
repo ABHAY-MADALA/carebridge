@@ -8,6 +8,9 @@ import type {
 } from "@/lib/schema";
 import type {
   HealthMetric,
+  AIImportCandidate,
+  AIImportCandidateInput,
+  AIProvider,
   OwnedDaily,
   OwnedEvent,
   OwnedSummary,
@@ -155,6 +158,9 @@ export type {
   DoctorSummary,
   HealthEvent,
   HealthMetric,
+  AIImportCandidate,
+  AIImportCandidateInput,
+  AIProvider,
   OwnedDaily,
   OwnedEvent,
   OwnedSummary,

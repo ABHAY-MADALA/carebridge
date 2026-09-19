@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { HealthEvent, DailyMetric } from "@/lib/schema";
 import { BackendDatabase, getDatabase, type Session } from "./database";
-import { ProfileId, PROFILES, OwnedSummary, BackendError } from "./schema";
+import { ProfileId, PROFILES, OwnedSummary, AIImportCandidateInput, BackendError } from "./schema";
 import { ProfileStore, newRecordId } from "./store";
 import { healthSnapshot, timeline, generateSummaryForProfile, ask, assistant, approvedSpeech } from "./health";
 import { FitbitService } from "./fitbit";
@@ -104,6 +104,7 @@ export async function handleBackend(req: Request, path: string[], database?: Bac
           case "timeline": return { userId: store.userId, entries: timeline(store) };
           case "summary": return { userId: store.userId, summary: store.summary() };
           case "settings": return { userId: store.userId, settings: store.settings() };
+          case "ai-inbox": return { userId: store.userId, synthetic: store.userId === "alex-demo", candidates: store.aiInbox() };
           case "fitbit/status": return fitbit.status(session);
           case "speech": return { userId: store.userId, text: approvedSpeech(store, new URL(req.url).searchParams.get("section") ?? undefined) };
           default: throw new BackendError(404, "endpoint-not-found");
@@ -141,6 +142,25 @@ export async function handleBackend(req: Request, path: string[], database?: Bac
       }
       case "settings": {
         result = run(() => store.saveSettings(input)); break;
+      }
+      case "ai-inbox/stage": {
+        const data = z.object({
+          confirmedReview: z.literal(true),
+          candidates: z.array(AIImportCandidateInput).min(1).max(100),
+        }).strict().parse(input);
+        result = run(() => ({ userId: store.userId, ...store.stageAIInbox(data.candidates, data.confirmedReview) })); break;
+      }
+      case "ai-inbox/confirm": {
+        const data = Confirm.extend({ ids: z.array(z.string().min(1)).min(1).max(50) }).strict().parse(input);
+        result = run(() => ({ userId: store.userId, ...store.confirmAIInbox([...new Set(data.ids)], data.confirmed) })); break;
+      }
+      case "ai-inbox/dismiss": {
+        const data = Confirm.extend({ ids: z.array(z.string().min(1)).min(1).max(50) }).strict().parse(input);
+        result = run(() => ({ userId: store.userId, removed: store.dismissAIInbox([...new Set(data.ids)], data.confirmed) })); break;
+      }
+      case "ai-inbox/demo-reset": {
+        const data = Confirm.parse(input);
+        result = run(() => ({ userId: store.userId, candidates: store.resetDemoAIInbox(data.confirmed) })); break;
       }
       case "demo/reset": {
         const data = Confirm.parse(input); run(() => store.resetDemo(data.confirmed)); result = { userId: store.userId, ok: true }; break;

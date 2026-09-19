@@ -45,6 +45,31 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
+### Profile-scoped AI conversation inbox (September 19, 2026)
+
+My Health now includes an AI conversation inbox inside Connected health data.
+Abhay Personal can locally parse JSON, HTML and TXT exports from ChatGPT, Claude,
+Gemini or another AI; only user-authored, health-like messages become proposed
+items. Provider replies never become patient facts. Imported wording, provider,
+conversation title and available timestamp are preserved, duplicates stay handled,
+and nothing becomes a HealthEvent until a second explicit review/confirmation.
+
+Alex has three deterministic fictional examples (ChatGPT, Claude and Gemini), a
+visible demo label and a restore-inbox action. Existing Alex databases gain only
+the new synthetic inbox without re-seeding or re-dating health history. Pending
+items and handled fingerprints are backend/profile scoped. Confirmed events retain
+source provenance in their note; missing details remain null. The local UI is
+honest that continuous MCP/OAuth capture still requires production authentication,
+encrypted hosted storage and a public connector service.
+
+Automated coverage verifies provider export parsing, exclusion of assistant text,
+generic health-note fallback without invented facts, duplicate suppression,
+Personal/Alex isolation and confirmation. All verification suites, typecheck and
+the production build pass. Live UI QA covered Alex selection through the final
+confirmation screen without saving, Personal archive controls, dark mode and Large
+text. The refreshed build runs at `127.0.0.1:3000`. Changes are intentionally
+uncommitted and unpushed pending user review.
+
 ### Body Picture theme-control cleanup (September 19, 2026)
 
 Removed the duplicate page-level Light/Dark mode button from Body Picture. The

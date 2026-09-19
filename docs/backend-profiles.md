@@ -131,6 +131,11 @@ No CORS access is enabled. Use same-origin requests with cookies.
 | POST `/assistant` | `{text,conversationId?:UUID}` | Existing safe ask/propose shape plus `userId,conversationId`; server-owned history, no event save |
 | GET `/settings` | — | Per-profile language and external-AI preference |
 | POST `/settings` | `{language:"en"|"es",allowExternalAI?:boolean}` | Profile preference update; optional fields default to English/false |
+| GET `/ai-inbox` | — | Current profile's pending AI-conversation proposals; Alex is deterministic and synthetic |
+| POST `/ai-inbox/stage` | `{confirmedReview:true,candidates:[...]}` | Personal-only local archive candidates; content hashes prevent duplicate staging |
+| POST `/ai-inbox/confirm` | `{confirmed:true,ids:[...]}` | Converts only selected proposals into owned HealthEvents, then removes them from the inbox |
+| POST `/ai-inbox/dismiss` | `{confirmed:true,ids:[...]}` | Removes selected proposals and remembers their fingerprints so re-importing does not revive them |
+| POST `/ai-inbox/demo-reset` | `{confirmed:true}` | Restores only Alex's three fictional conversation proposals |
 | POST `/demo/reset` | `{confirmed:true}` | Alex-only reset/reseed; Personal gets 403 |
 | POST `/demo/import` | See migration below | Explicit synthetic import only |
 | GET `/fitbit/status` | — | Actual connection status, configured/allowed flags, real lastSyncAt; never tokens |
@@ -152,6 +157,13 @@ intake assistant uses only that profile's server-stored conversation; it does no
 mix client chat histories. Personal external AI is opt-in and defaults off.
 Alex always uses deterministic fallback, regardless of keys or preferences.
 No summary or health event is saved by the assistant itself.
+
+Conversation archive parsing happens in the browser for JSON, HTML and TXT. Only
+the extracted user messages and proposed structure are staged; original archive
+files and provider replies are not stored. Confirmation uses the provider message
+timestamp as the recorded/report time when present, labels that provenance in the
+event note, and never treats it as proof of symptom onset. Live ChatGPT/Claude MCP
+connections are deliberately not represented as connected in this local build.
 
 ### Frontend cutover (completed)
 

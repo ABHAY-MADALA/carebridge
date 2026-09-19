@@ -16,6 +16,7 @@ import {
 import { useSettings } from "@/components/a11y/SettingsProvider";
 import { useT } from "@/components/a11y/useT";
 import { FitbitConnect } from "@/components/health/FitbitConnect";
+import { AIConversationInbox } from "@/components/health/AIConversationInbox";
 import { HealthHistory } from "@/components/health/HealthHistory";
 import { useHealthData } from "@/components/health/useHealthData";
 import { HelpTip } from "@/components/HelpTip";
@@ -189,7 +190,8 @@ export default function MyHealthPage() {
             icon={<Link2 aria-hidden />}
             help={<HelpTip topic="myHealth" compact align="right" />}
           >
-            <Link href="/records" className="health-records-link">
+            <AIConversationInbox />
+            <Link href="/records" className="health-records-link mt-5">
               <span><FileHeart aria-hidden /></span>
               <span><strong>{t("myHealth.recordsLink")}</strong><small>{t("myHealth.recordsLinkBody")}</small></span>
               <ArrowRight aria-hidden />

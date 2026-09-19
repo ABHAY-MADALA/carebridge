@@ -4,7 +4,21 @@ import { HealthEvent, DailyMetric, DoctorSummary, ChatMessage } from "@/lib/sche
 import { buildEvents, buildMetrics } from "@/lib/store/seed";
 import { dateKey } from "@/lib/dates";
 import { BackendDatabase } from "./database";
-import { ProfileId, OwnedEvent, OwnedDaily, OwnedSummary, HealthMetric, PatientSettings, BackendError, requirePersonal } from "./schema";
+import {
+  ProfileId,
+  OwnedEvent,
+  OwnedDaily,
+  OwnedSummary,
+  HealthMetric,
+  PatientSettings,
+  AIImportCandidate,
+  AIImportCandidateInput,
+  type AIImportCandidate as AIImportCandidateType,
+  type AIImportCandidateInput as AIImportCandidateInputType,
+  type AIProvider,
+  BackendError,
+  requirePersonal,
+} from "./schema";
 
 export const Connection = z.object({
   userId: z.literal("personal"), accessToken: z.string().min(1), refreshToken: z.string().nullable(),
@@ -12,7 +26,95 @@ export const Connection = z.object({
 });
 export type Connection = z.infer<typeof Connection>;
 const Conversation = z.object({ userId: ProfileId, messages: z.array(ChatMessage) });
+const AIInboxState = z.object({
+  pending: z.array(AIImportCandidate),
+  handledIds: z.array(z.string()),
+});
 type Kind = "event" | "metric" | "daily" | "summary" | "settings" | "metadata" | "conversation";
+
+function aiProviderName(provider: AIProvider) {
+  if (provider === "chatgpt") return "ChatGPT";
+  if (provider === "claude") return "Claude";
+  if (provider === "gemini") return "Gemini";
+  return "another AI service";
+}
+
+function demoAIInbox(now = new Date()): AIImportCandidateInputType[] {
+  const at = (daysAgo: number, hour: number) => {
+    const date = new Date(now);
+    date.setDate(date.getDate() - daysAgo);
+    date.setHours(hour, 15, 0, 0);
+    return date.toISOString();
+  };
+  return [
+    {
+      provider: "chatgpt",
+      originalText: "The right side of my chest has been aching about 6 out of 10 since yesterday.",
+      capturedAt: at(2, 20),
+      conversationTitle: "Checking a new pain",
+      drafts: [{
+        category: "pain",
+        label: "Right chest pain",
+        severity: 6,
+        bodyLocation: "Right chest",
+        onset: "yesterday",
+        pattern: null,
+        trendHint: null,
+        durationMinutes: null,
+        cycleDay: null,
+        cyclePhase: null,
+        originalInput: "The right side of my chest has been aching about 6 out of 10 since yesterday.",
+        inputLanguage: "en",
+        translation: null,
+        note: null,
+      }],
+    },
+    {
+      provider: "claude",
+      originalText: "I have been exhausted every afternoon this week.",
+      capturedAt: at(1, 16),
+      conversationTitle: "Afternoon fatigue",
+      drafts: [{
+        category: "fatigue",
+        label: "Fatigue",
+        severity: null,
+        bodyLocation: null,
+        onset: "this week",
+        pattern: "In the afternoon",
+        trendHint: null,
+        durationMinutes: null,
+        cycleDay: null,
+        cyclePhase: null,
+        originalInput: "I have been exhausted every afternoon this week.",
+        inputLanguage: "en",
+        translation: null,
+        note: null,
+      }],
+    },
+    {
+      provider: "gemini",
+      originalText: "I slept about 4 hours last night and kept waking up.",
+      capturedAt: at(0, 8),
+      conversationTitle: "Sleep question",
+      drafts: [{
+        category: "sleep",
+        label: "Poor sleep",
+        severity: null,
+        bodyLocation: null,
+        onset: "last night",
+        pattern: null,
+        trendHint: null,
+        durationMinutes: 240,
+        cycleDay: null,
+        cyclePhase: null,
+        originalInput: "I slept about 4 hours last night and kept waking up.",
+        inputLanguage: "en",
+        translation: null,
+        note: null,
+      }],
+    },
+  ];
+}
 
 /** Construct only after resolving a controlled server session. Every read and
  * write includes user_id, even updates by an otherwise unique record ID. */
@@ -49,7 +151,11 @@ export class ProfileStore {
   private invalidateSummary() { this.remove("summary", "current"); }
 
   ensureDemo() {
-    if (this.userId !== "alex-demo" || this.get("metadata", "seeded")) return;
+    if (this.userId !== "alex-demo") return;
+    // Existing demo databases predate the conversation inbox. Seed that one
+    // new synthetic surface without replacing or re-dating Alex's health data.
+    if (!this.get("metadata", "ai-inbox")) this.replaceAIInbox(demoAIInbox(), []);
+    if (this.get("metadata", "seeded")) return;
     for (const event of buildEvents()) this.put("event", event.id, OwnedEvent.parse(this.stamp(event)));
     for (const daily of buildMetrics()) this.put("daily", daily.date, OwnedDaily.parse(this.stamp(daily)));
     this.put("metadata", "seeded", { seededAt: new Date().toISOString() });
@@ -108,6 +214,123 @@ export class ProfileStore {
     return record ? Conversation.parse(record).messages : [];
   }
   saveConversation(id: string, messages: z.infer<typeof ChatMessage>[]) { this.put("conversation", id, Conversation.parse({ userId: this.userId, messages })); }
+
+  private aiInboxState() {
+    const stored = this.get("metadata", "ai-inbox");
+    return stored
+      ? AIInboxState.parse(stored)
+      : { pending: [] as AIImportCandidateType[], handledIds: [] as string[] };
+  }
+
+  private candidateId(candidate: AIImportCandidateInputType) {
+    return `ai-${createHash("sha256")
+      .update(JSON.stringify({
+        provider: candidate.provider,
+        originalText: candidate.originalText,
+        capturedAt: candidate.capturedAt,
+      }))
+      .digest("hex")
+      .slice(0, 32)}`;
+  }
+
+  private replaceAIInbox(
+    candidates: AIImportCandidateInputType[],
+    handledIds: string[],
+  ) {
+    const stagedAt = new Date().toISOString();
+    const pending = candidates.map((candidate) => AIImportCandidate.parse({
+      ...AIImportCandidateInput.parse(candidate),
+      id: this.candidateId(candidate),
+      userId: this.userId,
+      synthetic: this.userId === "alex-demo",
+      stagedAt,
+    }));
+    this.put("metadata", "ai-inbox", AIInboxState.parse({ pending, handledIds }));
+    return pending;
+  }
+
+  aiInbox() {
+    return this.aiInboxState().pending;
+  }
+
+  stageAIInbox(rawCandidates: AIImportCandidateInputType[], confirmedReview: boolean) {
+    if (this.userId !== "personal") throw new BackendError(403, "ai-import-personal-only");
+    if (!confirmedReview) throw new BackendError(400, "review-confirmation-required");
+    const candidates = z.array(AIImportCandidateInput).min(1).max(100).parse(rawCandidates);
+    const state = this.aiInboxState();
+    const known = new Set([
+      ...state.handledIds,
+      ...state.pending.map((candidate) => candidate.id),
+    ]);
+    const stagedAt = new Date().toISOString();
+    const additions = candidates.flatMap((candidate) => {
+      const id = this.candidateId(candidate);
+      if (known.has(id)) return [];
+      known.add(id);
+      return [AIImportCandidate.parse({
+        ...candidate,
+        id,
+        userId: this.userId,
+        synthetic: false,
+        stagedAt,
+      })];
+    });
+    const pending = [...state.pending, ...additions];
+    this.put("metadata", "ai-inbox", AIInboxState.parse({
+      pending,
+      handledIds: state.handledIds,
+    }));
+    return { added: additions.length, skipped: candidates.length - additions.length, pending };
+  }
+
+  dismissAIInbox(ids: string[], confirmed: boolean) {
+    if (!confirmed) throw new BackendError(400, "confirmation-required");
+    const state = this.aiInboxState();
+    const selected = new Set(ids);
+    const removed = state.pending.filter((candidate) => selected.has(candidate.id));
+    if (!removed.length) throw new BackendError(404, "ai-inbox-item-not-found");
+    this.put("metadata", "ai-inbox", AIInboxState.parse({
+      pending: state.pending.filter((candidate) => !selected.has(candidate.id)),
+      handledIds: [...new Set([...state.handledIds, ...removed.map((candidate) => candidate.id)])].slice(-1000),
+    }));
+    return removed.length;
+  }
+
+  confirmAIInbox(ids: string[], confirmed: boolean) {
+    if (!confirmed) throw new BackendError(400, "confirmation-required");
+    const state = this.aiInboxState();
+    const selected = new Set(ids);
+    const candidates = state.pending.filter((candidate) => selected.has(candidate.id));
+    if (candidates.length !== selected.size) throw new BackendError(404, "ai-inbox-item-not-found");
+    const now = new Date().toISOString();
+    const events = candidates.flatMap((candidate) => candidate.drafts.map((draft) => {
+      const sourceTime = candidate.capturedAt ?? now;
+      const provenance = candidate.capturedAt
+        ? `Imported from ${aiProviderName(candidate.provider)}. The conversation time is kept as the recorded time; the exact symptom start is only what the patient stated.`
+        : `Imported from ${aiProviderName(candidate.provider)}. The export did not include a conversation time.`;
+      return HealthEvent.parse({
+        ...draft,
+        id: `evt-${randomUUID()}`,
+        occurredAt: sourceTime,
+        recordedAt: sourceTime,
+        originalInput: candidate.originalText,
+        inputMethod: "text",
+        note: draft.note ? `${draft.note}\n${provenance}` : provenance,
+      });
+    }));
+    const saved = this.addEvents(events, true);
+    this.put("metadata", "ai-inbox", AIInboxState.parse({
+      pending: state.pending.filter((candidate) => !selected.has(candidate.id)),
+      handledIds: [...new Set([...state.handledIds, ...candidates.map((candidate) => candidate.id)])].slice(-1000),
+    }));
+    return { candidates: candidates.length, events: saved };
+  }
+
+  resetDemoAIInbox(confirmed: boolean) {
+    if (this.userId !== "alex-demo") throw new BackendError(403, "demo-reset-only");
+    if (!confirmed) throw new BackendError(400, "confirmation-required");
+    return this.replaceAIInbox(demoAIInbox(), []);
+  }
   connection() {
     requirePersonal(this.userId);
     const row = this.db.sql.prepare("SELECT data FROM connections WHERE user_id=?").get(this.userId);

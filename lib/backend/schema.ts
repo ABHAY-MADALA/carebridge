@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { HealthEvent, DailyMetric, DoctorSummary } from "@/lib/schema";
+import { HealthEvent, DailyMetric, DoctorSummary, DraftEvent } from "@/lib/schema";
 
 export const ProfileId = z.enum(["personal", "alex-demo"]);
 export type ProfileId = z.infer<typeof ProfileId>;
@@ -27,6 +27,32 @@ export const PatientSettings = z.object({
   allowExternalAI: z.boolean().default(false),
 }).strict();
 export type PatientSettings = z.infer<typeof PatientSettings>;
+
+/**
+ * Conversation imports are deliberately an inbox, not health records. The
+ * original patient wording stays alongside the proposed structure until the
+ * patient explicitly confirms the item.
+ */
+export const AIProvider = z.enum(["chatgpt", "claude", "gemini", "other"]);
+export type AIProvider = z.infer<typeof AIProvider>;
+
+export const AIImportCandidateInput = z.object({
+  provider: AIProvider,
+  originalText: z.string().trim().min(1).max(4000),
+  capturedAt: z.string().datetime().nullable().default(null),
+  conversationTitle: z.string().trim().min(1).max(200).nullable().default(null),
+  drafts: z.array(DraftEvent).min(1).max(5),
+}).strict();
+export type AIImportCandidateInput = z.infer<typeof AIImportCandidateInput>;
+
+export const AIImportCandidate = AIImportCandidateInput.extend({
+  id: z.string().min(1),
+  userId: ProfileId,
+  synthetic: z.boolean(),
+  stagedAt: z.string().datetime(),
+});
+export type AIImportCandidate = z.infer<typeof AIImportCandidate>;
+
 export class BackendError extends Error {
   constructor(public status: number, public code: string) { super(code); }
 }
