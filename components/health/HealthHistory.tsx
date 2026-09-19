@@ -1,0 +1,170 @@
+"use client";
+
+import { useMemo } from "react";
+import { Mic, Keyboard, Hand, ClipboardList, Stethoscope } from "lucide-react";
+import { EntryActions } from "@/components/ui/EntryActions";
+import type { HealthEvent, InputMethod } from "@/lib/schema";
+import { useT } from "@/components/a11y/useT";
+import { TimelineEntry } from "@/components/ui/TimelineEntry";
+import { SourceBadge } from "@/components/ui/SourceBadge";
+import { dateKeyOf, formatDayHeading, formatTime } from "@/lib/dates";
+import { METRICS } from "@/lib/health/metrics";
+import type { TimelineEntry as BackendTimelineEntry } from "@/lib/backend/client";
+
+/*
+  The timeline turns isolated notes into a longitudinal story. It is the thing
+  that makes an appointment months from now survivable: nobody has to remember
+  what happened in week three.
+*/
+
+const METHOD_ICON: Record<InputMethod, typeof Mic> = {
+  voice: Mic,
+  text: Keyboard,
+  visual: Hand,
+  form: ClipboardList,
+  clinician: Stethoscope,
+};
+
+function formatDuration(mins: number) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
+}
+
+function EventRow({ event, sourceLabel, onDelete, last }: { event: HealthEvent; sourceLabel: string; onDelete: (id: string) => Promise<void>; last: boolean }) {
+  const { t, tRaw } = useT();
+  const severityWords = tRaw<string[]>("severityScale.words");
+  const MethodIcon = METHOD_ICON[event.inputMethod];
+  const methodLabel = t(`timeline.methodIcon.${event.inputMethod}`);
+
+  return (
+    <TimelineEntry
+      last={last}
+      time={formatTime(event.occurredAt)}
+      trailing={
+        <EntryActions label={event.label} time={formatTime(event.occurredAt)} onRemove={() => onDelete(event.id)} />
+      }
+      title={
+        <span className="inline-flex items-center gap-2 text-base">
+          {event.label}
+        </span>
+      }
+      meta={
+        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          {event.severity !== null && (
+            <span className="flex items-center gap-1.5">
+              <span className="font-semibold text-ink">{event.severity}/10</span>
+              <span className="text-muted">{severityWords[event.severity]}</span>
+            </span>
+          )}
+          {event.bodyLocation && <span className="text-muted">{event.bodyLocation}</span>}
+          {event.durationMinutes ? <span className="text-muted">{formatDuration(event.durationMinutes)}</span> : null}
+          {event.pattern && <span className="text-muted">{event.pattern}</span>}
+          {event.trendHint === "worse" && <span className="font-semibold text-warn">{t("timeline.gettingWorse")}</span>}
+          {event.trendHint === "better" && <span className="font-semibold text-good">{t("timeline.gettingBetter")}</span>}
+        </div>
+      }
+      quote={event.originalInput || undefined}
+      source={
+        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+          <MethodIcon className="h-3.5 w-3.5" aria-hidden />
+          {sourceLabel} &middot; {methodLabel}
+          {event.cyclePhase && (
+            <span>&middot; {t("timeline.phaseSuffix", { phase: t(`insights.phase.${event.cyclePhase}`) })}</span>
+          )}
+          {event.translation && (
+            <span>&middot; {t("confirmationCard.inEnglish")}: &ldquo;{event.translation}&rdquo;</span>
+          )}
+        </p>
+      }
+    />
+  );
+}
+
+function DailyRow({
+  entry,
+  last,
+}: {
+  entry: Extract<BackendTimelineEntry, { kind: "daily" }>;
+  last: boolean;
+}) {
+  const daily = entry.daily;
+  const values = [
+    daily.sleepMinutes !== null
+      ? `Sleep ${METRICS.sleepMinutes.format(daily.sleepMinutes)}`
+      : null,
+    daily.steps !== null ? METRICS.steps.format(daily.steps) : null,
+    daily.restingHeartRate !== null
+      ? `Resting heart rate ${METRICS.restingHeartRate.format(
+          daily.restingHeartRate,
+        )}`
+      : null,
+  ].filter(Boolean);
+  return (
+    <TimelineEntry
+      last={last}
+      time="Daily"
+      title="Wearable measurements"
+      meta={<p className="mt-1 text-sm text-muted">{values.join(" · ")}</p>}
+      source={
+        <SourceBadge source={daily.source === "demo" ? "demo" : "fitbit"} />
+      }
+    />
+  );
+}
+
+export function HealthHistory({ timeline, onDelete: deleteEvent }: { timeline: BackendTimelineEntry[]; onDelete: (id: string) => Promise<void> }) {
+  const { t } = useT();
+
+  const days = useMemo(() => {
+    const byDay = new Map<string, BackendTimelineEntry[]>();
+    for (const entry of timeline) {
+      const key =
+        entry.kind === "daily" ? entry.daily.date : dateKeyOf(entry.event.occurredAt);
+      byDay.set(key, [...(byDay.get(key) ?? []), entry]);
+    }
+    return [...byDay.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [timeline]);
+
+  return (
+    <div>
+      {days.length === 0 ? (
+        <p className="text-lg text-muted">{t("timeline.empty")}</p>
+      ) : (
+        <div className="space-y-10">
+          {days.map(([day, dayEntries]) => {
+            return (
+              <section key={day} aria-labelledby={`day-${day}`}>
+                <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <h2 id={`day-${day}`} className="text-sm font-semibold uppercase tracking-wide text-muted">
+                    {formatDayHeading(day)}
+                  </h2>
+                </div>
+
+                <ul>
+                  {dayEntries.map((entry, i) =>
+                    entry.kind === "event" ? (
+                      <EventRow
+                        key={`event-${entry.event.id}`}
+                        event={entry.event}
+                        sourceLabel={entry.source}
+                        onDelete={deleteEvent}
+                        last={i === dayEntries.length - 1}
+                      />
+                    ) : (
+                      <DailyRow
+                        key={`daily-${entry.daily.date}`}
+                        entry={entry}
+                        last={i === dayEntries.length - 1}
+                      />
+                    ),
+                  )}
+                </ul>
+              </section>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

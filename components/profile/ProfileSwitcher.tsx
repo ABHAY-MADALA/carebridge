@@ -41,6 +41,7 @@ export function ProfileSwitcher({
           compact ? "min-h-[44px] px-2 py-1.5" : "px-2 py-2",
         )}
         aria-haspopup="menu"
+        aria-label={`Switch profile: ${profile.name}, ${profile.synthetic ? "Demo Patient" : "Personal"}`}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >

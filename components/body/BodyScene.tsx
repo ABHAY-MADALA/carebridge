@@ -9,34 +9,35 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { Expand, Minimize, Minus, Mouse, PersonStanding, Plus, RotateCcw } from "lucide-react";
 import { useSettings } from "@/components/a11y/SettingsProvider";
 import { useT } from "@/components/a11y/useT";
+import { bodyRegionAt } from "@/lib/body/regions";
 
 // The local CC0 human is 1.8 units tall, faces +Z, and has patient-left at +X.
 const ANCHORS: Record<string, [number, number, number]> = {
   Head: [0, 1.68, .10], Neck: [0, 1.52, .04], Chest: [0, 1.38, .12],
+  "Center face": [0, 1.66, .115], "Left face": [.032, 1.66, .108], "Right face": [-.032, 1.66, .108],
+  "Left ear": [.061, 1.68, .075], "Right ear": [-.061, 1.68, .075],
+  "Center chest": [0, 1.38, .12], "Left chest": [.10, 1.38, .12], "Right chest": [-.10, 1.38, .12],
   "Upper abdomen": [0, 1.19, .085], "Lower abdomen": [0, 1.04, .09], Pelvis: [0, .92, .08],
+  "Center upper abdomen": [0, 1.19, .085], "Left upper abdomen": [.08, 1.19, .085], "Right upper abdomen": [-.08, 1.19, .085],
+  "Center lower abdomen": [0, 1.04, .09], "Left lower abdomen": [.075, 1.04, .09], "Right lower abdomen": [-.075, 1.04, .09],
+  "Center pelvis": [0, .92, .08],
+  "Left pelvis": [.11, .92, .08], "Right pelvis": [-.11, .92, .08],
   "Left shoulder": [.205, 1.46, .025], "Right shoulder": [-.205, 1.46, .025],
+  "Left armpit": [.185, 1.34, .035], "Right armpit": [-.185, 1.34, .035],
   "Left arm": [.35, 1.25, .025], "Right arm": [-.35, 1.25, .025],
+  "Left upper arm": [.285, 1.28, .025], "Right upper arm": [-.285, 1.28, .025],
+  "Left elbow": [.38, 1.14, .02], "Right elbow": [-.38, 1.14, .02],
+  "Left forearm": [.43, 1.06, .02], "Right forearm": [-.43, 1.06, .02],
   "Left hand": [.52, 1.04, .01], "Right hand": [-.52, 1.04, .01],
   "Left leg": [.12, .72, .07], "Right leg": [-.12, .72, .07],
+  "Left thigh": [.12, .70, .07], "Right thigh": [-.12, .70, .07],
   "Left knee": [.13, .46, .09], "Right knee": [-.13, .46, .09],
+  "Left lower leg": [.13, .29, .075], "Right lower leg": [-.13, .29, .075],
   "Left foot": [.12, .045, .10], "Right foot": [-.12, .045, .10],
   Back: [0, 1.36, -.11], "Lower back": [0, 1.10, -.10],
+  "Center upper back": [0, 1.36, -.11], "Left upper back": [.10, 1.36, -.11], "Right upper back": [-.10, 1.36, -.11],
+  "Center lower back": [0, 1.10, -.10], "Left lower back": [.09, 1.10, -.10], "Right lower back": [-.09, 1.10, -.10],
 };
-
-function regionAt(point: Vector3, normalZ: number): string {
-  const { x, y } = point, a = Math.abs(x), side = x >= 0 ? "Left" : "Right";
-  if (y > 1.59) return "Head";
-  if (y > 1.48 && a < .095) return "Neck";
-  if (a > .44 && y > .87) return `${side} hand`;
-  if (a > .25 && y > .91) return `${side} arm`;
-  if (a > .16 && y > 1.38) return `${side} shoulder`;
-  if (y < .13) return `${side} foot`;
-  if (y < .84) return y > .40 && y < .53 ? `${side} knee` : `${side} leg`;
-  if (y < .96) return "Pelvis";
-  if (normalZ < -.25) return y > 1.23 ? "Back" : "Lower back";
-  if (y > 1.26) return "Chest";
-  return y > 1.12 ? "Upper abdomen" : "Lower abdomen";
-}
 
 type Props = { value: string | null; onChange: (id: string) => void; severity?: number | null };
 type View = "front" | "back" | "left" | "right";
@@ -56,7 +57,7 @@ function Human({ value, onChange, marker, onMarker, dark, highContrast, onReady 
   }, [model]);
   const uniforms = useMemo(() => ({ point: { value: new Vector3(0, -10, 0) }, enabled: { value: 0 } }), []);
   const material = useMemo(() => {
-    const mat = new MeshPhysicalMaterial({ color: highContrast ? "#999999" : dark ? "#8b8177" : "#b1a69a", roughness: .78, metalness: .02, clearcoat: 0 });
+    const mat = new MeshPhysicalMaterial({ color: highContrast ? "#999999" : dark ? "#748396" : "#b1a69a", roughness: .78, metalness: .02, clearcoat: 0 });
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.cbPoint = uniforms.point;
       shader.uniforms.cbEnabled = uniforms.enabled;
@@ -84,11 +85,25 @@ function Human({ value, onChange, marker, onMarker, dark, highContrast, onReady 
     event.stopPropagation();
     const local = event.object.worldToLocal(event.point.clone());
     onMarker(local);
-    onChange(regionAt(local, event.face?.normal.z ?? 1));
+    onChange(bodyRegionAt(local, event.face?.normal.z ?? 1));
   };
   return <group>
     <mesh geometry={geometry} material={material} onClick={select} />
-    {[-1, 1].map((side) => <mesh key={side} position={[side * .0302, 1.689, .07855]} material={material}><sphereGeometry args={[.0125, 24, 16]} /></mesh>)}
+    {[-1, 1].map((side) => {
+      const id = side === 1 ? "Left ear" : "Right ear";
+      const point = new Vector3(side * .0302, 1.689, .07855);
+      return <mesh
+        key={side}
+        position={point}
+        material={material}
+        onClick={(event) => {
+          if (event.delta > 5) return;
+          event.stopPropagation();
+          onMarker(point.clone());
+          onChange(id);
+        }}
+      ><sphereGeometry args={[.0125, 24, 16]} /></mesh>;
+    })}
   </group>;
 }
 

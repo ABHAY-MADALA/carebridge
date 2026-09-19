@@ -89,6 +89,15 @@ do not run this backend in Edge/serverless ephemeral storage.
 
 ## Frontend integration contract (for the other agent)
 
+Merged UI addition: `GET /documents` lists only current-profile metadata;
+`GET /documents/file?id=<UUID>` returns owned original bytes as base64;
+`POST /documents` accepts `{confirmed:true,files:[{id,name,data}]}` with base64
+bytes. Uploads are Personal-only, transactionally saved and idempotent by ID and
+content. Limits are 15 MB/file, 30 MB/batch, and 20 files/batch. Documents do not
+enter AI context, summaries or health events. Historical unowned IndexedDB files
+are preserved but not automatically imported. The frontend sends expectedContext
+after reading files so a profile switch cannot redirect an upload to a new owner.
+
 All paths below are prefixed `/api/backend` and return `Cache-Control: no-store`.
 No CORS access is enabled. Use same-origin requests with cookies.
 

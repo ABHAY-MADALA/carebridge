@@ -17,33 +17,46 @@ function Figure({ back, value, onChange }: Props & { back: boolean }) {
   return (
     <svg className="anatomy-figure" viewBox="0 0 240 600" role="group" aria-label={back ? "Back body regions" : "Front body regions"}>
       {region("Head", <path d="M120 12C101 12 95 24 95 42l2 16c-6-6-7 2-3 11l5 4c3 13 12 23 21 23s18-10 21-23l5-4c4-9 3-17-3-11l2-16c0-18-6-30-25-30Z" />)}
+      {!back && <>
+        {region("Right ear", <ellipse cx="97" cy="61" rx="5" ry="12" />)}
+        {region("Left ear", <ellipse cx="143" cy="61" rx="5" ry="12" />)}
+        {region("Right face", <path d="M102 37c-1 15 0 29 5 39 3 6 6 9 9 11V37Z" />)}
+        {region("Center face", <path d="M116 35h8v52c-3 2-5 2-8 0Z" />)}
+        {region("Left face", <path d="M124 37v50c3-2 6-5 9-11 5-10 6-24 5-39Z" />)}
+      </>}
       {region("Neck", <path d="M104 86v18l-15 13 31 21 31-21-15-13V86c-10 13-22 13-32 0Z" />)}
       {[-1, 1].map((side) => {
         const name = back ? (side === -1 ? "Left" : "Right") : (side === -1 ? "Right" : "Left");
         return <g key={side} transform={side === 1 ? "translate(240 0) scale(-1 1)" : undefined}>
           {region(`${name} shoulder`, <path d="M86 112c-22 0-35 10-39 26l-5 22c14 1 27-8 32-22Z" />)}
-          {region(`${name} arm`, <>
-            <path d="M43 161c10 0 21-6 28-14-1 28-8 53-20 72l-15-6c0-17 0-34 7-52Z" />
-            <path d="M36 214c7 1 12 3 16 7-3 22-14 46-26 66l-12-5c4-21 14-49 22-68Z" />
-          </>)}
+          {region(`${name} upper arm`, <path d="M43 161c10 0 21-6 28-14-1 28-8 53-20 72l-15-6c0-17 0-34 7-52Z" />)}
+          {region(`${name} forearm`, <path d="M36 214c7 1 12 3 16 7-3 22-14 46-26 66l-12-5c4-21 14-49 22-68Z" />)}
+          {region(`${name} elbow`, <path d="M35 207c6-2 12 0 17 5l-1 11c-5 4-11 3-16-1Z" />)}
           {region(`${name} hand`, <path d="m14 284 12 5 1 14 10 12c2 4-1 6-4 3l-7-7 2 24c0 4-4 4-5 0l-3-18 0 25c-1 4-4 4-5 0l-1-25-3 23c-1 4-4 3-4-1l2-23-4 17c-1 4-5 2-4-2l4-23Z" />)}
-          {region(`${name} leg`, <>
-            <path d="M82 298c9 13 20 21 35 24l-6 57-8 48-23 1c-9-28-14-53-11-77 1-17 5-35 13-53Z" />
-            <path d="M80 451c7 5 14 5 21 0 3 25 1 47-4 68l-5 40H80l-3-41c-6-22-8-43 3-67Z" />
-          </>)}
+          {region(`${name} thigh`, <path d="M82 298c9 13 20 21 35 24l-6 57-8 48-23 1c-9-28-14-53-11-77 1-17 5-35 13-53Z" />)}
+          {region(`${name} lower leg`, <path d="M80 451c7 5 14 5 21 0 3 25 1 47-4 68l-5 40H80l-3-41c-6-22-8-43 3-67Z" />)}
           {region(`${name} knee`, <path d="M80 430c8-4 16-4 23-1l-1 20c-6 9-16 9-23 0Z" />)}
           {region(`${name} foot`, <path d="M79 560h14l4 18c3 8-1 13-8 13H65c-5-2-4-8 1-12l11-10Z" />)}
         </g>;
       })}
       {back ? <>
-        {region("Back", <path d="M89 113c10 8 18 12 31 17 13-5 21-9 31-17l17 27-14 60-12 29H98l-12-29-14-60Z" />)}
-        {region("Lower back", <path d="M98 231h44l10 41-32 24-32-24Z" />)}
-        {region("Pelvis", <path d="m88 274 32 23 32-23c7 14 9 27 6 38-12 15-27 18-38 8-11 10-26 7-38-8-3-11-1-24 6-38Z" />)}
+        {region("Left upper back", <path d="M89 113c10 8 18 12 31 17v99H98l-12-29-14-60Z" />)}
+        {region("Right upper back", <path d="M151 113c-10 8-18 12-31 17v99h22l12-29 14-60Z" />)}
+        {region("Left lower back", <path d="M98 231h22v65l-32-24Z" />)}
+        {region("Right lower back", <path d="M142 231h-22v65l32-24Z" />)}
+        {region("Left pelvis", <path d="m88 274 32 23v23c-11 10-26 7-38-8-3-11-1-24 6-38Z" />)}
+        {region("Right pelvis", <path d="m152 274-32 23v23c11 10 26 7 38-8 3-11 1-24-6-38Z" />)}
       </> : <>
-        {region("Chest", <path d="M88 114c12 7 20 12 32 14 12-2 20-7 32-14l15 26-10 39c-13 10-26 14-37 7-11 7-24 3-37-7l-10-39Z" />)}
-        {region("Upper abdomen", <path d="M84 183c13 8 25 12 36 6 11 6 23 2 36-6l-11 39-1 27h-48l-1-27Z" />)}
-        {region("Lower abdomen", <path d="M95 251h50l6 23-31 28-31-28Z" />)}
-        {region("Pelvis", <path d="m87 278 33 27 33-27 6 20c-8 13-22 25-39 29-17-4-31-16-39-29Z" />)}
+        {region("Right chest", <path d="M88 114c12 7 20 12 32 14v58c-11 7-24 3-37-7l-10-39Z" />)}
+        {region("Left chest", <path d="M152 114c-12 7-20 12-32 14v58c11 7 24 3 37-7l10-39Z" />)}
+        {region("Right armpit", <path d="M73 137c4 2 9 2 14 0l-4 27c-5-3-9-9-12-16Z" />)}
+        {region("Left armpit", <path transform="translate(240 0) scale(-1 1)" d="M73 137c4 2 9 2 14 0l-4 27c-5-3-9-9-12-16Z" />)}
+        {region("Right upper abdomen", <path d="M84 183c13 8 25 12 36 6v60H96l-1-27Z" />)}
+        {region("Left upper abdomen", <path d="M156 183c-13 8-25 12-36 6v60h24l1-27Z" />)}
+        {region("Right lower abdomen", <path d="M95 251h25v51l-31-28Z" />)}
+        {region("Left lower abdomen", <path d="M145 251h-25v51l31-28Z" />)}
+        {region("Right pelvis", <path d="m87 278 33 27v22c-17-4-31-16-39-29Z" />)}
+        {region("Left pelvis", <path d="m153 278-33 27v22c17-4 31-16 39-29Z" />)}
       </>}
       <g className="anatomy-detail" fill="none" pointerEvents="none" strokeLinecap="round" strokeLinejoin="round">
         {back ? <>

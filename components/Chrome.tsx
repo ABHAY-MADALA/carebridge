@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { Sidebar } from "@/components/Sidebar";
-import { MobileNav } from "@/components/MobileNav";
+import { TopNav } from "@/components/TopNav";
+import { SideNav } from "@/components/SideNav";
 import { ReadAloud } from "@/components/a11y/ReadAloud";
 import { useT } from "@/components/a11y/useT";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -14,10 +14,9 @@ import { DemoIndicator, ProfileSwitcher } from "@/components/profile/ProfileSwit
   Patient chrome (nav, settings, footer) stays off the clinician screen.
   A doctor should see the approved record, not a product menu.
 
-  Desktop gets a persistent left Sidebar; narrow screens get MobileNav (a
-  top bar plus a fixed bottom nav) instead — both mounted always, shown/
-  hidden by breakpoint, so there's one nav-link source of truth in each
-  rather than a JS-computed viewport switch.
+  The patient experience keeps its primary navigation visible in a right-side
+  rail on desktop. TopNav holds account controls and supplies the same grouped
+  destinations in a compact menu only where the rail cannot fit.
 
   ReadAloud is mounted here, outside the clinician branch — /clinician already
   has its own explicit speech UI (Speak for Me, Read this part, the voice
@@ -57,27 +56,22 @@ export function Chrome({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={`flex min-h-screen${pathname === "/body-picture" ? " body-screen-shell" : ""}`}>
-      <Sidebar />
-      <div className="app-content flex min-h-screen min-w-0 flex-1 flex-col">
-        <MobileNav />
-        <div className="workspace-bar hidden md:flex">
-          <span>CareBridge <span className="mx-2 opacity-40">/</span> {t(`nav.${({"/": "home", "/body-picture": "bodyPicture", "/guided-check-in": "guidedCheckIn", "/timeline": "timeline", "/insights": "insights", "/explain": "explain", "/tell-carebridge": "tell", "/my-health": "myHealth"} as Record<string, string>)[pathname] ?? "home"}`)}</span>
-          <div className="flex items-center gap-2">
-            <DemoIndicator />
-            <ThemeToggle />
-          </div>
+    <div className={`min-h-screen${pathname === "/body-picture" ? " body-screen-shell" : ""}`}>
+      <TopNav />
+      <ReadAloud />
+      <div className="patient-frame">
+        <div className="patient-main-column">
+          <main id="main" className="workspace-main w-full px-4 pb-12 pt-8 md:px-8 md:pt-10 xl:px-10">
+            {children}
+          </main>
+          <footer className="border-t border-line px-4 py-6 md:px-8 xl:px-10">
+            <p className="max-w-3xl text-xs leading-relaxed text-muted">
+              CareBridge organizes what you record and compares it with your own past
+              patterns. It does not diagnose conditions or give medical advice.
+            </p>
+          </footer>
         </div>
-        <ReadAloud />
-        <main id="main" className="workspace-main mx-auto w-full max-w-[1440px] flex-1 px-4 pb-8 pt-6 md:px-9 md:pb-8 md:pt-8">
-          {children}
-        </main>
-        <footer className="mx-auto w-full max-w-[1440px] px-4 pb-28 pt-4 md:px-9 md:pb-5">
-          <p className="text-xs text-muted">
-            CareBridge organizes what you record and compares it with your own past
-            patterns. It does not diagnose conditions or give medical advice.
-          </p>
-        </footer>
+        <SideNav />
       </div>
     </div>
   );

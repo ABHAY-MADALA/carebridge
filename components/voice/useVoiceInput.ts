@@ -55,6 +55,8 @@ export function useVoiceInput({
   const chunksRef = useRef<Blob[]>([]);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const useScribe = useRef<boolean | null>(null);
+  const active = useRef(true);
+  const transcription = useRef<AbortController | null>(null);
 
   useEffect(() => {
     voiceStatus().then((s) => {
@@ -71,12 +73,16 @@ export function useVoiceInput({
 
   const sendForTranscription = useCallback(
     async (blob: Blob) => {
+      if (!active.current) return;
+      const controller = new AbortController();
+      transcription.current = controller;
       setTranscribing(true);
       setError(null);
       try {
         const form = new FormData();
         form.append("audio", blob, "input.webm");
-        const res = await fetch("/api/transcribe", { method: "POST", body: form });
+        const res = await fetch("/api/transcribe", { method: "POST", body: form, signal: controller.signal });
+        if (!active.current) return;
 
         /*
           204 is the route's way of saying "transcription is unavailable, use
@@ -111,7 +117,7 @@ export function useVoiceInput({
           setError("I did not catch that. Please try again, or type it instead.");
           return;
         }
-        onResult({ text: json.text, languageCode: json.languageCode || "en" });
+        if (active.current && !controller.signal.aborted) onResult({ text: json.text, languageCode: json.languageCode || "en" });
       } catch {
         setError("Something went wrong with the recording. You can type instead.");
       } finally {
@@ -131,6 +137,7 @@ export function useVoiceInput({
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.onresult = (e) => {
+      if (!active.current) return;
       const text = e.results?.[0]?.[0]?.transcript ?? "";
       if (text) onResult({ text, languageCode: lang });
     };
@@ -158,6 +165,7 @@ export function useVoiceInput({
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!active.current) { stream.getTracks().forEach(t => t.stop()); return; }
       const recorder = new MediaRecorder(stream);
       chunksRef.current = [];
 
@@ -190,7 +198,19 @@ export function useVoiceInput({
     setRecording(false);
   }, []);
 
-  useEffect(() => () => stop(), [stop]);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+      transcription.current?.abort();
+      const recorder = recorderRef.current;
+      if (recorder) {
+        recorder.onstop = null;
+        recorder.stream.getTracks().forEach(track => track.stop());
+      }
+      stop();
+    };
+  }, [stop]);
 
   return {
     start,

@@ -2,9 +2,10 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Pencil, PersonStanding } from "lucide-react";
+import { ArrowRight, Check, Loader2, MapPin, Mic, Pencil, PersonStanding, Square } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { BodyPicker } from "@/components/body/BodyPicker";
+import { useVoiceInput } from "@/components/voice/useVoiceInput";
 import { useHealthData } from "@/components/health/useHealthData";
 import { useT } from "@/components/a11y/useT";
 import { painLabelFor } from "@/lib/health/categories";
@@ -52,12 +53,26 @@ export default function BodyPicturePage() {
     ? { night: "Peor de noche", rest: "Mejor con descanso", activity: "Peor con actividad" }
     : { night: "Worse at night", rest: "Better with rest", activity: "Worse with activity" };
   const onsetLabel = (key: string) => key === "threeDaysAgo" ? (lang === "es" ? "Hace 3 días" : "3 days ago") : t(`manualEntry.onsets.${key}`);
+  const localizedLocation = location ? (lang === "en" ? location : regionLabels[location] ?? location) : "";
+  const recordedLocation = location
+    ? t("bodyPicture.locationRecorded", { location: localizedLocation })
+    : null;
+  const voice = useVoiceInput({
+    lang,
+    onResult: ({ text }) => {
+      setNote((previous) => {
+        const existing = previous.trim();
+        return `${existing ? `${existing} ` : ""}${text.trim()}`.slice(0, 500);
+      });
+    },
+  });
 
   const toggleDescriptor = (key: string) => {
     setDescriptors((prev) => (prev.includes(key) ? prev.filter((d) => d !== key) : [...prev, key]));
   };
 
   const composedNote = [
+    recordedLocation,
     ...descriptors.map((d) => descriptorLabels[d] ?? extraLabels[d]),
     pattern ? descriptorLabels[pattern] : null,
     note.trim(),
@@ -119,7 +134,7 @@ export default function BodyPicturePage() {
         <h1 className="text-2xl font-semibold text-ink">{t("bodyPicture.savedTitle")}</h1>
         <p className="mt-2 text-muted">{t("bodyPicture.savedBody")}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link href="/timeline" className="btn btn-lg btn-primary">
+          <Link href="/my-health#recent" className="btn btn-lg btn-primary">
             {t("home.seeEverything")}
           </Link>
           <button type="button" className="btn btn-lg btn-secondary" onClick={reset}>
@@ -155,7 +170,40 @@ export default function BodyPicturePage() {
             </div>
             <div>
               <label htmlFor="body-description" className="detail-label">{lang === "es" ? "Descripción" : "Description"}</label>
-              <div className="description-field"><textarea id="body-description" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("bodyPicture.notePlaceholder")} /><span>{note.length}/500</span></div>
+              {location && (
+                <p className="body-location-capture" aria-live="polite">
+                  <MapPin aria-hidden />
+                  {t("bodyPicture.locationAuto", { location: localizedLocation })}
+                </p>
+              )}
+              <div className="description-field">
+                <textarea id="body-description" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("bodyPicture.notePlaceholder")} />
+                <div className="description-field-footer">
+                  <button
+                    type="button"
+                    className={cn("description-voice-button", voice.recording && "is-recording recording-pulse")}
+                    onClick={() => (voice.recording ? voice.stop() : void voice.start())}
+                    aria-pressed={voice.recording}
+                    disabled={voice.transcribing}
+                    aria-label={voice.recording
+                      ? (lang === "es" ? "Detener grabación de la descripción" : "Stop recording the description")
+                      : (lang === "es" ? "Describir con la voz" : "Describe with your voice")}
+                  >
+                    {voice.transcribing
+                      ? <Loader2 className="animate-spin" aria-hidden />
+                      : voice.recording
+                        ? <Square aria-hidden />
+                        : <Mic aria-hidden />}
+                    <span>{voice.recording
+                      ? (lang === "es" ? "Detener" : "Stop")
+                      : voice.transcribing
+                        ? (lang === "es" ? "Añadiendo voz…" : "Adding speech…")
+                        : (lang === "es" ? "Hablar" : "Speak")}</span>
+                  </button>
+                  <span className="description-count">{note.length}/500</span>
+                </div>
+              </div>
+              {voice.error && <p className="body-description-voice-error" role="alert">{voice.error}</p>}
             </div>
             <div>
               <label htmlFor="body-onset" className="detail-label">{t("bodyPicture.whenStart")}</label>
@@ -165,12 +213,12 @@ export default function BodyPicturePage() {
               <p className="detail-label">{lang === "es" ? "Detalles adicionales" : "Additional details"} <span className="text-muted font-normal">{lang === "es" ? "(opcional)" : "(optional)"}</span></p>
               <div className="descriptor-chips">{DESCRIPTOR_KEYS.map((key) => <button key={key} type="button" aria-pressed={descriptors.includes(key)} onClick={() => toggleDescriptor(key)}>{descriptorLabels[key]}</button>)}{PATTERN_KEYS.map((key) => <button key={key} type="button" aria-pressed={pattern === key} onClick={() => setPattern((p) => p === key ? null : key)}>{descriptorLabels[key]}</button>)}{Object.entries(extraLabels).map(([key, label]) => <button key={key} type="button" aria-pressed={descriptors.includes(key)} onClick={() => toggleDescriptor(key)}>{label}</button>)}</div>
             </div>
-            <button type="button" className="btn btn-md btn-primary w-full" disabled={!canReview} onClick={() => setReviewing(true)}>{t("bodyPicture.addToTimeline")}<ArrowRight size={16} aria-hidden /></button>
+            <button type="button" className="btn btn-md btn-primary w-full" disabled={!canReview || voice.recording || voice.transcribing} onClick={() => setReviewing(true)}>{t("bodyPicture.addToTimeline")}<ArrowRight size={16} aria-hidden /></button>
             <p className="text-xs text-muted text-center">{location ? (lang === "es" ? "Podrás revisar todo antes de guardar." : "You’ll review your entry before saving.") : (lang === "es" ? "Elige primero un área del cuerpo." : "Choose an area on the body to continue.")}</p>
           </> : <div className="space-y-4" aria-live="polite">
             <div className="flex items-start justify-between gap-3"><h2 className="text-lg font-medium">{t("bodyPicture.reviewHeading")}</h2><button type="button" className="btn btn-sm btn-ghost" onClick={() => setReviewing(false)} disabled={saving}><Pencil size={14} aria-hidden />{t("bodyPicture.change")}</button></div>
             <p className="text-lg">{painLabelFor(location!)}</p>
-            <dl className="review-details"><div><dt>{t("bodyPicture.howStrong")}</dt><dd>{severity === null ? (lang === "es" ? "Sin registrar" : "Not recorded") : `${severity} / 10`}</dd></div><div><dt>{t("bodyPicture.whenStart")}</dt><dd>{onset ? onsetLabel(ONSETS.find((o) => o.value === onset)!.key) : (lang === "es" ? "Sin registrar" : "Not recorded")}</dd></div></dl>
+            <dl className="review-details"><div><dt>{t("confirmationCard.where")}</dt><dd>{localizedLocation}</dd></div><div><dt>{t("bodyPicture.howStrong")}</dt><dd>{severity === null ? (lang === "es" ? "Sin registrar" : "Not recorded") : `${severity} / 10`}</dd></div><div><dt>{t("bodyPicture.whenStart")}</dt><dd>{onset ? onsetLabel(ONSETS.find((o) => o.value === onset)!.key) : (lang === "es" ? "Sin registrar" : "Not recorded")}</dd></div></dl>
             {composedNote && <p className="text-sm text-muted break-words">“{composedNote}”</p>}
             {error && <p role="alert" className="text-danger text-sm">{error}</p>}
             <button type="button" className="btn btn-md btn-primary w-full" disabled={saving} onClick={() => void save()}><Check size={16} aria-hidden />{saving ? (lang === "es" ? "Guardando…" : "Saving…") : t("bodyPicture.addToTimeline")}</button>

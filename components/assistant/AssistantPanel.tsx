@@ -260,7 +260,7 @@ export function AssistantPanel({
             {savedCount === 1 ? t("assistant.savedOne") : t("assistant.savedMany", { count: savedCount })}
           </p>
           <p className="mt-1 text-base">{t("assistant.savedBody")}</p>
-          <Link href="/timeline" className="btn btn-md btn-primary mt-3">
+          <Link href="/my-health#recent" className="btn btn-md btn-primary mt-3">
             <CalendarDays className="h-5 w-5" aria-hidden />
             {t("assistant.seeTimeline")}
           </Link>

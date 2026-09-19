@@ -6,6 +6,7 @@ import { ProfileId, PROFILES, OwnedSummary, BackendError } from "./schema";
 import { ProfileStore, newRecordId } from "./store";
 import { healthSnapshot, timeline, generateSummaryForProfile, ask, assistant, approvedSpeech } from "./health";
 import { FitbitService } from "./fitbit";
+import { DocumentStore } from "./documents";
 
 const cookieName = "carebridge_backend_session";
 export const contextKey = (s: Session) => `${s.userId}:${s.revision}`;
@@ -16,12 +17,19 @@ const Confirm = z.object({ confirmed: z.literal(true) }).strict();
 
 function requestBoundary(req: Request, callback: boolean) {
   const url = new URL(req.url);
+  // Next may normalize req.url to localhost even for a 127.0.0.1 browser.
+  // Validate the actual Host before comparing Origin; never trust forwarded hosts.
+  const host = req.headers.get("host") ?? url.host;
+  let requestOrigin: URL;
+  try { requestOrigin = new URL(`${url.protocol}//${host}`); }
+  catch { throw new BackendError(403, "invalid-host"); }
   // Controlled identities are for a single-user LOCAL hackathon host, not auth
   // for a publicly deployed medical service. Fail closed off loopback.
   if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) throw new BackendError(403, "local-profile-backend-only");
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(requestOrigin.hostname) || requestOrigin.host !== host || requestOrigin.port !== url.port) throw new BackendError(403, "local-profile-backend-only");
   if (!callback) {
     const origin = req.headers.get("origin");
-    if ((origin && origin !== url.origin) || req.headers.get("sec-fetch-site") === "cross-site") throw new BackendError(403, "cross-origin-request");
+    if ((origin && origin !== requestOrigin.origin) || req.headers.get("sec-fetch-site") === "cross-site") throw new BackendError(403, "cross-origin-request");
     if (req.method !== "GET" && req.headers.get("x-carebridge-request") !== "1") throw new BackendError(403, "request-header-required");
   }
 }
@@ -29,7 +37,7 @@ function sessionFrom(req: Request, db: BackendDatabase) {
   const cookies = req.headers.get("cookie") ?? "";
   return db.session(cookies.split(";").map(c => c.trim()).find(c => c.startsWith(`${cookieName}=`))?.slice(cookieName.length+1));
 }
-async function body(req: Request): Promise<unknown> {
+async function body(req: Request, limit = 1024 * 1024): Promise<unknown> {
   if (!req.headers.get("content-type")?.startsWith("application/json")) throw new BackendError(415, "json-required");
   // Bound the streaming body, not just the caller-controlled Content-Length.
   const reader = req.body?.getReader();
@@ -38,7 +46,7 @@ async function body(req: Request): Promise<unknown> {
   for (;;) {
     const { done, value } = await reader.read(); if (done) break;
     length += value.length;
-    if (length > 1024*1024) { await reader.cancel(); throw new BackendError(413, "body-too-large"); }
+    if (length > limit) { await reader.cancel(); throw new BackendError(413, "body-too-large"); }
     chunks.push(value);
   }
   try { return JSON.parse(Buffer.concat(chunks).toString("utf8")); }
@@ -81,12 +89,15 @@ export async function handleBackend(req: Request, path: string[], database?: Bac
       return json(profileInfo(switched), 200, switched);
     }
     const store = new ProfileStore(db, session.userId);
+    const documents = new DocumentStore(db, session.userId);
     const run = <T>(fn: () => T) => db.inSession(session, fn);
     // Import can initialize an unseeded demo from its exact legacy snapshot.
     if (endpoint !== "demo/import") run(() => store.ensureDemo());
     if (req.method === "GET") {
       const result = run(() => {
         switch(endpoint) {
+          case "documents": return { userId: session.userId, documents: documents.list() };
+          case "documents/file": return documents.read(z.string().uuid().parse(new URL(req.url).searchParams.get("id")));
           case "health": return healthSnapshot(store);
           case "events": return { userId: store.userId, events: store.events() };
           case "metrics": return { userId: store.userId, metrics: store.metrics(), daily: store.daily() };
@@ -101,10 +112,13 @@ export async function handleBackend(req: Request, path: string[], database?: Bac
       return json(result, 200, session);
     }
     if (req.method !== "POST") throw new BackendError(405, "method-not-allowed");
-    const input = await body(req);
+    const input = await body(req, endpoint === "documents" ? 42 * 1024 * 1024 : undefined);
     run(() => {});
     let result: unknown;
     switch(endpoint) {
+      case "documents": {
+        result = run(() => ({ userId: session.userId, documents: documents.save(input) })); break;
+      }
       case "events": {
         const data = z.object({ confirmed: z.literal(true), events: z.array(HealthEvent.extend({ userId: ProfileId.optional(), synthetic: z.boolean().optional() }).strict()).min(1).max(100) }).strict().parse(input);
         result = run(() => ({ userId: store.userId, events: store.addEvents(data.events, data.confirmed) })); break;

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   createContext,
   useCallback,
   useContext,
@@ -33,6 +34,7 @@ const PROFILE_CHANGED_EVENT = "carebridge:profile-changed";
 const ASSISTANT_HANDOFF_KEY = "carebridge.pending-message.v1";
 
 type RequestOptions = {
+  expectedContext?: string;
   method?: "GET" | "POST";
   body?: unknown;
   signal?: AbortSignal;
@@ -129,6 +131,9 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   const recoverSession = useCallback(async () => {
     abortInFlight();
+    stopSpeaking();
+    clearSpeechCache();
+    window.sessionStorage.removeItem(ASSISTANT_HANDOFF_KEY);
     const next = await establishSession();
     window.dispatchEvent(
       new CustomEvent(PROFILE_CHANGED_EVENT, { detail: { context: next.context } }),
@@ -141,6 +146,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       const method = options.method ?? "GET";
       const requestContext = contextRef.current;
       if (!requestContext) throw new BackendClientError(401, "session-required");
+      if (options.expectedContext && options.expectedContext !== requestContext) throw new StaleProfileResponseError();
+      if (options.signal?.aborted) throw new StaleProfileResponseError();
 
       const controller = new AbortController();
       controllers.current.add(controller);
@@ -175,7 +182,9 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           throw new StaleProfileResponseError();
         }
 
-        return await responseJson<T>(response);
+        const data = await responseJson<T>(response);
+        if (requestContext !== contextRef.current || controller.signal.aborted) throw new StaleProfileResponseError();
+        return data;
       } finally {
         controllers.current.delete(controller);
         options.signal?.removeEventListener("abort", onAbort);
@@ -290,7 +299,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           onComplete={() => setMigrationRequired(false)}
         />
       ) : (
-        children
+        <Fragment key={value.context}>{children}</Fragment>
       )}
     </ProfileContext.Provider>
   );

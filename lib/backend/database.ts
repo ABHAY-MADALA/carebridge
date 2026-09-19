@@ -21,6 +21,11 @@ export class BackendDatabase {
     this.sql.exec(`PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL;
       CREATE TABLE IF NOT EXISTS profiles (id TEXT PRIMARY KEY CHECK(id IN ('personal','alex-demo')));
       INSERT OR IGNORE INTO profiles VALUES ('personal'), ('alex-demo');
+      CREATE TABLE IF NOT EXISTS documents (
+        user_id TEXT NOT NULL REFERENCES profiles(id),
+        id TEXT NOT NULL, name TEXT NOT NULL, type TEXT NOT NULL,
+        added_at TEXT NOT NULL, bytes BLOB NOT NULL,
+        PRIMARY KEY(user_id,id));
       CREATE TABLE IF NOT EXISTS records (
         user_id TEXT NOT NULL REFERENCES profiles(id),
         kind TEXT NOT NULL CHECK(kind IN ('event','metric','daily','summary','settings','metadata','conversation')),
