@@ -63,11 +63,11 @@ export function ProfileControls() {
       )}
 
       <section className="mt-8 rounded-2xl border border-line bg-surface p-5">
-        <h2 className="text-lg font-semibold text-ink">AI privacy</h2>
+        <h2 className="text-lg font-semibold text-ink">Health information processing</h2>
         <p className="mt-1 text-sm text-muted">
           {profile.synthetic
-            ? "Alex always uses HealthThread's offline deterministic assistant. Demo records are never sent to an external AI provider."
-            : "By default, Personal uses the offline deterministic assistant. You can opt in to the configured external AI provider for more natural wording."}
+            ? "Alex uses only HealthThread's local rules. Fictional demo records are never sent to an external AI provider."
+            : "HealthThread uses local rules by default. You may allow the configured model to help structure or reword only what you enter in HealthThread. This does not connect to or read your ChatGPT, Claude, or Gemini account."}
         </p>
         <label className="mt-4 flex items-center gap-3">
           <input
@@ -84,7 +84,7 @@ export function ProfileControls() {
             }}
           />
           <span className="font-medium">
-            Allow external AI for this Personal profile
+            Allow a configured model to help organize my HealthThread entries
           </span>
         </label>
       </section>

@@ -32,14 +32,17 @@ const ACCEPTED_EXTENSIONS = ["json", "html", "htm", "txt"];
 
 const copy = {
   en: {
-    heading: "AI conversation inbox",
-    introPersonal: "Bring in health details you already shared with an AI. HealthThread checks your messages locally and keeps possible updates here for you to review.",
-    introDemo: "Alex uses fictional conversations so you can demonstrate the review flow without connecting a real account.",
-    privacy: "AI replies are never treated as patient facts. Nothing enters My Health until you approve it.",
-    liveTitle: "Continuous connections",
-    liveBody: "The secure live ChatGPT and Claude connector needs real sign-in and a hosted production service. This local build does not pretend those accounts are connected.",
-    importTitle: "Import a conversation export",
-    importHint: "Choose a JSON, HTML, or text export. The file is read on this computer and only possible health messages are staged.",
+    heading: "Approved AI updates",
+    introPersonal: "Health details you approve in ChatGPT, Claude, or Gemini will arrive here for review. Until live connections are available, you can import past conversations below.",
+    introDemo: "Alex uses fictional approved updates to demonstrate what will arrive from ChatGPT, Claude, and Gemini.",
+    privacy: "AI replies are never treated as patient facts. Approval in the AI chat sends an item here; you still choose whether it becomes part of My Health.",
+    liveTitle: "Live AI connections · Planned",
+    liveBody: "The live connection is not active in this local demo. It will require a secure HealthThread service and a patient-authorized connection to each AI provider.",
+    flowChat: "Chat normally in your AI app",
+    flowApprove: "Approve sending the health detail",
+    flowInbox: "Review it here before saving",
+    importTitle: "Import past conversations now",
+    importHint: "Choose a JSON, HTML, or text export. HealthThread reads it on this computer and stages only possible health messages for review.",
     choose: "Choose conversation file",
     provider: "Export source",
     found: "possible health updates found",
@@ -49,10 +52,10 @@ const copy = {
     addReview: "Add to private review inbox",
     adding: "Adding to review…",
     duplicate: "Already reviewed or already in this inbox",
-    inboxTitle: "Waiting for your review",
-    inboxEmpty: "There are no conversation updates waiting for review.",
-    emptyHelp: "Choose an export above when you are ready. HealthThread will show possible updates here before anything can be saved.",
-    reported: "Shared with",
+    inboxTitle: "Health updates waiting for review",
+    inboxEmpty: "There are no approved AI updates waiting for review.",
+    emptyHelp: "No live updates have arrived. You can import a past conversation above, and HealthThread will show every possible update here before anything can be saved.",
+    reported: "From",
     noDate: "Conversation date not included",
     select: "Select this update",
     all: "Select all",
@@ -67,21 +70,25 @@ const copy = {
     saved: "Saved to My Health after your confirmation.",
     restore: "Restore demo inbox",
     restoring: "Restoring…",
-    demoBadge: "Demo · Fictional conversations",
-    importReady: "Archive import ready",
-    demoReady: "Demo source",
+    demoBadge: "Demo · Fictional approved updates",
+    importReady: "Past-chat import available",
+    livePlanned: "Live approval connection planned",
+    demoReady: "Fictional demo source",
     loadError: "The conversation inbox could not be loaded.",
     actionError: "That change could not be completed. Please try again.",
   },
   es: {
-    heading: "Bandeja de conversaciones con IA",
-    introPersonal: "Trae información de salud que ya compartiste con una IA. HealthThread revisa tus mensajes localmente y guarda posibles actualizaciones aquí para que las revises.",
-    introDemo: "Alex usa conversaciones ficticias para demostrar la revisión sin conectar una cuenta real.",
-    privacy: "Las respuestas de la IA nunca se tratan como hechos del paciente. Nada entra en Mi salud hasta que lo apruebes.",
-    liveTitle: "Conexiones continuas",
-    liveBody: "El conector seguro en vivo para ChatGPT y Claude necesita inicio de sesión real y un servicio de producción alojado. Esta versión local no finge que esas cuentas están conectadas.",
-    importTitle: "Importar una conversación",
-    importHint: "Elige una exportación JSON, HTML o de texto. El archivo se lee en esta computadora y solo se preparan posibles mensajes de salud.",
+    heading: "Actualizaciones de IA aprobadas",
+    introPersonal: "Los datos de salud que apruebes en ChatGPT, Claude o Gemini llegarán aquí para que los revises. Hasta que estén disponibles las conexiones en vivo, puedes importar conversaciones anteriores abajo.",
+    introDemo: "Alex usa actualizaciones ficticias aprobadas para demostrar lo que llegará desde ChatGPT, Claude y Gemini.",
+    privacy: "Las respuestas de la IA nunca se tratan como hechos del paciente. La aprobación en el chat de IA envía un elemento aquí; tú aún decides si forma parte de Mi salud.",
+    liveTitle: "Conexiones de IA en vivo · Planificadas",
+    liveBody: "La conexión en vivo no está activa en esta demostración local. Requerirá un servicio seguro de HealthThread y una conexión autorizada por el paciente con cada proveedor de IA.",
+    flowChat: "Habla normalmente en tu aplicación de IA",
+    flowApprove: "Aprueba enviar el dato de salud",
+    flowInbox: "Revísalo aquí antes de guardarlo",
+    importTitle: "Importar conversaciones anteriores ahora",
+    importHint: "Elige una exportación JSON, HTML o de texto. HealthThread la lee en esta computadora y prepara solo posibles mensajes de salud para su revisión.",
     choose: "Elegir archivo de conversación",
     provider: "Origen de la exportación",
     found: "posibles actualizaciones encontradas",
@@ -91,10 +98,10 @@ const copy = {
     addReview: "Añadir a la bandeja privada",
     adding: "Añadiendo…",
     duplicate: "Ya revisado o ya está en esta bandeja",
-    inboxTitle: "Esperando tu revisión",
-    inboxEmpty: "No hay actualizaciones esperando revisión.",
-    emptyHelp: "Elige una exportación arriba cuando quieras. HealthThread mostrará aquí las posibles actualizaciones antes de que se pueda guardar algo.",
-    reported: "Compartido con",
+    inboxTitle: "Actualizaciones de salud pendientes de revisión",
+    inboxEmpty: "No hay actualizaciones de IA aprobadas esperando revisión.",
+    emptyHelp: "No ha llegado ninguna actualización en vivo. Puedes importar una conversación anterior arriba y HealthThread mostrará aquí cada posible actualización antes de guardar algo.",
+    reported: "De",
     noDate: "La fecha de la conversación no está incluida",
     select: "Seleccionar esta actualización",
     all: "Seleccionar todo",
@@ -109,9 +116,10 @@ const copy = {
     saved: "Guardado en Mi salud después de tu confirmación.",
     restore: "Restaurar bandeja de demostración",
     restoring: "Restaurando…",
-    demoBadge: "Demo · Conversaciones ficticias",
-    importReady: "Importación disponible",
-    demoReady: "Fuente de demostración",
+    demoBadge: "Demo · Actualizaciones aprobadas ficticias",
+    importReady: "Importación de chats anteriores disponible",
+    livePlanned: "Conexión con aprobación en vivo planificada",
+    demoReady: "Fuente ficticia de demostración",
     loadError: "No se pudo cargar la bandeja de conversaciones.",
     actionError: "No se pudo completar el cambio. Inténtalo de nuevo.",
   },
@@ -309,10 +317,34 @@ export function AIConversationInbox() {
         {(["chatgpt", "claude", "gemini"] as const).map((item) => (
           <div key={item} className="flex items-center gap-3 rounded-xl border border-line bg-raised p-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand" aria-hidden>{providerMark(item)}</span>
-            <span className="min-w-0"><strong className="block text-sm text-ink">{AI_PROVIDER_LABELS[item]}</strong><small className="text-muted">{profile.synthetic ? text.demoReady : text.importReady}</small></span>
+            <span className="min-w-0">
+              <strong className="block text-sm text-ink">{AI_PROVIDER_LABELS[item]}</strong>
+              <small className="block text-muted">{profile.synthetic ? text.demoReady : text.importReady}</small>
+              {!profile.synthetic && <small className="block text-muted">{text.livePlanned}</small>}
+            </span>
           </div>
         ))}
       </div>
+
+      {!profile.synthetic && (
+        <div className="mt-4 rounded-xl border border-line bg-raised p-4">
+          <div className="flex items-start gap-3">
+            <Bot className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />
+            <div>
+              <h3 className="font-semibold text-ink">{text.liveTitle}</h3>
+              <p className="mt-1 text-sm text-muted">{text.liveBody}</p>
+            </div>
+          </div>
+          <ol className="mt-4 grid gap-2 text-sm sm:grid-cols-3" aria-label={text.liveTitle}>
+            {[text.flowChat, text.flowApprove, text.flowInbox].map((step, index) => (
+              <li key={step} className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-ink">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand" aria-hidden>{index + 1}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       <div className="mt-4 flex gap-3 rounded-xl bg-brand-soft p-4 text-sm text-ink">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />
@@ -471,13 +503,6 @@ export function AIConversationInbox() {
           </>
         )}
       </div>
-
-      {!profile.synthetic && (
-        <details className="mt-6 border-t border-line pt-5">
-          <summary className="cursor-pointer font-semibold text-ink">{text.liveTitle}</summary>
-          <p className="mt-2 text-sm text-muted">{text.liveBody}</p>
-        </details>
-      )}
 
       {(message || error) && (
         <p className={`mt-4 flex items-center gap-2 rounded-xl p-3 text-sm ${error ? "bg-warn-soft text-ink" : "bg-brand-soft text-ink"}`} role="status">

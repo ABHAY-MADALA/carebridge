@@ -45,6 +45,26 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
+### External-AI approval-flow wording (September 19, 2026)
+
+The website now describes the AI conversation inbox as the destination for
+patient-approved updates from ChatGPT, Claude and Gemini, not as a live assistant
+inside HealthThread. Personal clearly shows the intended future sequence: chat in
+the external AI app, approve sending a health detail there, then review it in
+HealthThread before it can become a record. The local demo states that live account
+connections are planned and not active; past-chat JSON/HTML/TXT import remains the
+honest capability available today. Provider cards distinguish current import from
+the planned live approval connection.
+
+User-facing navigation, onboarding, help text and the talk/type entry screen now
+call HealthThread's existing interaction a health-entry tool rather than an AI
+assistant. The profile setting is renamed Health information processing and says
+that its optional model only structures or rewords information entered in
+HealthThread; it does not connect to or read consumer AI accounts. English and
+Spanish copy were updated together. Regression coverage checks the planned-live
+disclosure and removes the prior assistant wording. Typecheck, all verification
+suites, the production build and a live localhost UI review passed.
+
 ### Profile-scoped AI conversation inbox (September 19, 2026)
 
 My Health now includes an AI conversation inbox inside Connected health data.

@@ -106,9 +106,14 @@ assert.match(loader("const clock = new THREE__namespace.Clock();"), /TimerClock/
 assert.throws(() => loader("const clock = new THREE.Timer();"));
 
 for (const lang of ["en", "es"] as const) assert.ok(messages[lang].nav.guidedCheckIn);
-assert.equal(messages.en.nav.tell, "Tell HealthThread");
+assert.equal(messages.en.nav.tell, "Talk or type");
 assert.equal(messages.en.nav.insights, "Health Changes");
 assert.equal(messages.en.nav.explain, "Help Me Explain");
+const aiInboxSource = readFileSync("components/health/AIConversationInbox.tsx", "utf8");
+assert.match(aiInboxSource, /Live AI connections · Planned/);
+assert.match(aiInboxSource, /The live connection is not active in this local demo/);
+assert.match(aiInboxSource, /Approve sending the health detail/);
+assert.doesNotMatch(readFileSync("components/health/ProfileControls.tsx", "utf8"), /offline deterministic assistant/);
 assert.equal(messages.en.bodyPicture.addToTimeline, "Add to Timeline");
 assert.doesNotMatch(readFileSync("app/body-picture/page.tsx", "utf8"), /Save to Timeline/);
 assert.doesNotMatch(readFileSync("components/manual/ManualEntry.tsx", "utf8"), /CATEGORY_EMOJI/);

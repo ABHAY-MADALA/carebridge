@@ -9,7 +9,7 @@ export const messages = {
   en: {
     nav: {
       home: "Home",
-      tell: "Tell HealthThread",
+      tell: "Talk or type",
       bodyPicture: "Body Picture",
       timeline: "Timeline",
       insights: "Health Changes",
@@ -46,7 +46,7 @@ export const messages = {
       tagline: "Your health, in your own words.",
       manualHeading: "Prefer to choose from a list?",
       manualBody:
-        "Choose what you want to record, then answer one short question at a time. You do not need to use the assistant.",
+        "Choose what you want to record, then answer one short question at a time. You do not need to talk or type.",
       manualSwitchToAssistant: "Prefer to talk or type instead?",
       recentHeading: "Recently recorded",
       loadingHealth: "Loading your health information...",
@@ -78,7 +78,7 @@ export const messages = {
       moodOkay: "Okay",
       moodNotGood: "Not good",
       moodHardToTell: "Hard to tell",
-      talkOrType: "Tell HealthThread",
+      talkOrType: "Record by talking or typing",
       guidedCheckIn: "Guided Check-In",
     },
     tutorial: {
@@ -91,8 +91,8 @@ export const messages = {
       start: "Start HealthThread",
       screens: [
         {
-          title: "Tell HealthThread",
-          body: "Talk, type, or use pictures to tell us what is happening. You do not need the right words.",
+          title: "Record in your own way",
+          body: "Talk, type, or use pictures to record what is happening. You do not need the right words.",
         },
         {
           title: "HealthThread organises it",
@@ -115,9 +115,9 @@ export const messages = {
         how: "Start here when you are not sure where to go. You can talk, type, use the body picture, or choose a guided check-in.",
       },
       tell: {
-        title: "What is Tell HealthThread?",
-        what: "Tell HealthThread lets you describe what is happening in your own words, by voice or text. You do not need medical language.",
-        how: "Say or type what you notice. HealthThread will ask one useful follow-up at a time and show you everything before it is saved.",
+        title: "What is Talk or type?",
+        what: "Talk or type lets you record what is happening in your own words. It is a health-entry tool, not a replacement for ChatGPT, Claude, or Gemini.",
+        how: "Say or type what you notice. HealthThread asks only for details needed to organize the entry and shows you everything before it is saved.",
       },
       bodyPicture: {
         title: "What is Body Picture?",
@@ -142,7 +142,7 @@ export const messages = {
       timeline: {
         title: "What is my Timeline?",
         what: "Your timeline is everything you have told HealthThread, in the order it happened. It stays here, so months from now you can still see what was going on this week.",
-        how: "You do not need to do anything. Every time you tell HealthThread something, it appears here by itself.",
+        how: "You do not need to file anything. Every health update you confirm appears here automatically.",
       },
       baseline: {
         title: "What is my Personal Baseline?",
@@ -312,7 +312,7 @@ export const messages = {
       heading: "My Health Timeline",
       subtitle: "Everything you have told HealthThread, newest first. You did not have to file any of it.",
       loading: "Loading...",
-      empty: "Nothing here yet. Tell HealthThread something and it will appear.",
+      empty: "Nothing here yet. Record and confirm a health update and it will appear.",
       gettingWorse: "Getting worse",
       gettingBetter: "Getting better",
       remove: "Remove",
@@ -448,7 +448,7 @@ export const messages = {
       reviewChange: "Review change",
       hideDetails: "Hide details",
       connectionsHeading: "Connected health data",
-      connectionsSummary: "AI conversations, Fitbit, records, and other health sources.",
+      connectionsSummary: "Approved AI updates, Fitbit, records, and other health sources.",
       future: "Future connections",
       appleHealth: "Apple Health — requires an iPhone app",
       healthConnect: "Health Connect — requires an Android app",
@@ -577,19 +577,19 @@ export const messages = {
       durationHM: "{h}h {m}m",
     },
     assistant: {
-      heading: "Tell HealthThread",
+      heading: "Record a health update",
       stopSpeaking: "Stop speaking",
-      intro: "Say or type whatever is going on. You don't need the right words, and you don't need to know where it belongs.",
+      intro: "Describe what happened. HealthThread organizes it into a proposed health entry and shows it to you before anything is saved.",
       you: "You",
-      careBridge: "HealthThread",
-      understanding: "Understanding what you told me...",
+      careBridge: "HealthThread question",
+      understanding: "Organizing what you entered...",
       savedOne: "Saved. 1 entry was added to your timeline.",
       savedMany: "Saved. {count} entries were added to your timeline.",
-      savedBody: "HealthThread filed it in the right place for you. You don't need to do anything else.",
+      savedBody: "HealthThread added the details you confirmed to your record.",
       seeTimeline: "See my timeline",
       whatsGoingOn: "What's going on?",
       placeholder: "For example: my lower stomach has been hurting since yesterday",
-      tellCareBridge: "Tell HealthThread",
+      tellCareBridge: "Review this update",
       stopAndSend: "Stop and send",
       speakInstead: "Speak instead",
       transcribing: "Understanding...",
@@ -606,7 +606,7 @@ export const messages = {
   es: {
     nav: {
       home: "Inicio",
-      tell: "Cuéntale a HealthThread",
+      tell: "Hablar o escribir",
       bodyPicture: "Imagen del cuerpo",
       timeline: "Cronología",
       insights: "Cambios en mi salud",
@@ -643,7 +643,7 @@ export const messages = {
       tagline: "Tu salud, con tus propias palabras.",
       manualHeading: "¿Prefieres elegir de una lista?",
       manualBody:
-        "Elige qué quieres registrar y responde una pregunta breve a la vez. No necesitas usar el asistente.",
+        "Elige qué quieres registrar y responde una pregunta breve a la vez. No necesitas hablar ni escribir.",
       manualSwitchToAssistant: "¿Prefieres hablar o escribir en su lugar?",
       recentHeading: "Registrado recientemente",
       loadingHealth: "Cargando tu información de salud...",
@@ -675,7 +675,7 @@ export const messages = {
       moodOkay: "Bien",
       moodNotGood: "No muy bien",
       moodHardToTell: "No estoy seguro",
-      talkOrType: "Hablar o escribir",
+      talkOrType: "Registrar hablando o escribiendo",
       guidedCheckIn: "Registro guiado",
     },
     tutorial: {
@@ -688,8 +688,8 @@ export const messages = {
       start: "Empezar con HealthThread",
       screens: [
         {
-          title: "Cuéntale a HealthThread",
-          body: "Habla, escribe o usa imágenes para contarnos qué está pasando. No necesitas las palabras exactas.",
+          title: "Registra a tu manera",
+          body: "Habla, escribe o usa imágenes para registrar qué está pasando. No necesitas las palabras exactas.",
         },
         {
           title: "HealthThread lo organiza",
@@ -712,9 +712,9 @@ export const messages = {
         how: "Empieza aquí si no sabes adónde ir. Puedes hablar, escribir, usar la imagen del cuerpo o elegir un registro guiado.",
       },
       tell: {
-        title: "¿Qué es Cuéntale a HealthThread?",
-        what: "Cuéntale a HealthThread te permite describir lo que pasa con tus propias palabras, por voz o texto. No necesitas términos médicos.",
-        how: "Di o escribe lo que notas. HealthThread hará una pregunta útil a la vez y te mostrará todo antes de guardarlo.",
+        title: "¿Qué es Hablar o escribir?",
+        what: "Hablar o escribir te permite registrar lo que pasa con tus propias palabras. Es una herramienta de registro de salud, no un reemplazo de ChatGPT, Claude o Gemini.",
+        how: "Di o escribe lo que notas. HealthThread solo pregunta los detalles necesarios para organizar el registro y te muestra todo antes de guardarlo.",
       },
       bodyPicture: {
         title: "¿Qué es Imagen del cuerpo?",
@@ -739,7 +739,7 @@ export const messages = {
       timeline: {
         title: "¿Qué es mi cronología?",
         what: "Tu cronología es todo lo que le has contado a HealthThread, en el orden en que sucedió. Se queda aquí, para que dentro de meses todavía puedas ver qué pasaba esta semana.",
-        how: "No tienes que hacer nada. Cada vez que le cuentas algo a HealthThread, aparece aquí solo.",
+        how: "No tienes que archivar nada. Cada actualización de salud que confirmes aparece aquí automáticamente.",
       },
       baseline: {
         title: "¿Qué es mi patrón personal?",
@@ -909,7 +909,7 @@ export const messages = {
       heading: "Mi cronología de salud",
       subtitle: "Todo lo que le has contado a HealthThread, lo más reciente primero. No tuviste que archivar nada.",
       loading: "Cargando...",
-      empty: "Todavía no hay nada aquí. Cuéntale algo a HealthThread y aparecerá.",
+      empty: "Todavía no hay nada aquí. Registra y confirma una actualización de salud y aparecerá.",
       gettingWorse: "Empeorando",
       gettingBetter: "Mejorando",
       remove: "Eliminar",
@@ -1045,7 +1045,7 @@ export const messages = {
       reviewChange: "Revisar cambio",
       hideDetails: "Ocultar detalles",
       connectionsHeading: "Datos de salud conectados",
-      connectionsSummary: "Conversaciones con IA, Fitbit, registros y otras fuentes de salud.",
+      connectionsSummary: "Actualizaciones de IA aprobadas, Fitbit, registros y otras fuentes de salud.",
       future: "Futuras conexiones",
       appleHealth: "Apple Health — requiere una app de iPhone",
       healthConnect: "Health Connect — requiere una app de Android",
@@ -1174,19 +1174,19 @@ export const messages = {
       durationHM: "{h}h {m}m",
     },
     assistant: {
-      heading: "Cuéntale a HealthThread",
+      heading: "Registrar una actualización de salud",
       stopSpeaking: "Dejar de hablar",
-      intro: "Di o escribe lo que está pasando. No necesitas las palabras exactas, ni saber dónde encaja.",
+      intro: "Describe lo que pasó. HealthThread lo organiza como un registro de salud propuesto y te lo muestra antes de guardar algo.",
       you: "Tú",
-      careBridge: "HealthThread",
-      understanding: "Entendiendo lo que me contaste...",
+      careBridge: "Pregunta de HealthThread",
+      understanding: "Organizando lo que ingresaste...",
       savedOne: "Guardado. Se agregó 1 registro a tu cronología.",
       savedMany: "Guardado. Se agregaron {count} registros a tu cronología.",
-      savedBody: "HealthThread lo archivó en el lugar correcto por ti. No necesitas hacer nada más.",
+      savedBody: "HealthThread añadió a tu historial los datos que confirmaste.",
       seeTimeline: "Ver mi cronología",
       whatsGoingOn: "¿Qué está pasando?",
       placeholder: "Por ejemplo: me ha dolido el estómago desde ayer",
-      tellCareBridge: "Contarle a HealthThread",
+      tellCareBridge: "Revisar esta actualización",
       stopAndSend: "Detener y enviar",
       speakInstead: "Hablar en su lugar",
       transcribing: "Entendiendo...",
