@@ -11,7 +11,6 @@ import { useT } from "@/components/a11y/useT";
 import { painLabelFor } from "@/lib/health/categories";
 import type { DraftEvent } from "@/lib/schema";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { baseBodyLocation } from "@/lib/body/regions";
 
 const DESCRIPTOR_KEYS = ["sharp", "dull", "throbbing", "burning", "pressure"] as const;
@@ -157,8 +156,14 @@ export default function BodyPicturePage() {
 
   return (
     <div className="body-page">
-      <PageHeader title={t("bodyPicture.heading")} description={lang === "es" ? "Muéstranos dónde duele. Toca el cuerpo para marcar el dolor." : "Show us where it hurts. Click or tap on the body to mark your pain."}
-        actions={<div className="hidden md:block"><ThemeToggle /></div>} />
+      <PageHeader
+        title={t("bodyPicture.heading")}
+        description={
+          lang === "es"
+            ? "Muéstranos dónde duele. Toca el cuerpo para marcar el dolor."
+            : "Show us where it hurts. Click or tap on the body to mark your pain."
+        }
+      />
 
       <div className="body-workspace">
         <div className="body-canvas-column">

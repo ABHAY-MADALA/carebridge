@@ -45,6 +45,13 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
+### Body Picture theme-control cleanup (September 19, 2026)
+
+Removed the duplicate page-level Light/Dark mode button from Body Picture. The
+single app-wide theme control remains in the header account area, so the page no
+longer presents a second theme action beside its title. All verification suites,
+typecheck, and the production build pass.
+
 ### Synced Personal/Alex profiles on Windows (September 19, 2026)
 
 Fast-forwarded local `main` to GitHub commit `6ae859e`, which includes the
