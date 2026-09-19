@@ -1,12 +1,26 @@
-/**
- * Two overlapping soft shapes — connection, not a cross or a sparkle.
- * Deliberately small in engineering scope; this is the whole brand mark.
- */
+import Image from "next/image";
+
+/** HealthThread's map-path heart mark and wordmark, with a palette-matched
+ * asset for each app theme. */
 export function BrandMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 28 28" className={className} aria-hidden focusable="false">
-      <path d="M6 3h14l4 4v14l-4 4H4V9Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M9 16c0-5 4-7 10-7 0 6-3 10-8 10m-2 1 7-8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
+    <span className={["brand-mark", className].filter(Boolean).join(" ")} aria-hidden="true">
+      <Image
+        className="brand-mark-image brand-mark-light"
+        src="/brand/healththread-logo-light.png"
+        alt=""
+        width={2066}
+        height={443}
+        priority
+      />
+      <Image
+        className="brand-mark-image brand-mark-dark"
+        src="/brand/healththread-logo-dark.png"
+        alt=""
+        width={2065}
+        height={442}
+        priority
+      />
+    </span>
   );
 }

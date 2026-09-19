@@ -75,6 +75,21 @@ async function main() {
   assert.match(source("components/voice/useVoiceInput.ts"), /transcription.current\?\.abort/);
   assert.match(source("components/ui/CollapsibleSection.tsx"), /hashchange/);
   assert.match(source("app/body-picture/page.tsx"), /disabled=\{!canReview \|\| voice.recording \|\| voice.transcribing\}/);
+  const explain = source("app/explain/page.tsx");
+  assert.match(explain, /await generateSummary\(\)/);
+  assert.match(explain, /await saveSummary\(approved\)/);
+  assert.match(explain, /const approvedText = await getApprovedSpeech\(\)/);
+  assert.match(explain, /getApprovedSpeech\(\)\.then\(\(text\) => speech\.speak\(text\)\)/);
+  assert.doesNotMatch(explain, /summaryToText|buildSummary|fetch\("\/api\/summary/);
+  assert.match(explain, /calmMode=\{calmMode\}/);
+  assert.match(explain, /CalmDetails title=\{t\("explain\.speakingOptions"\)\}/);
+  assert.match(source("components/explain/SummaryEditor.tsx"), /!calmMode \|\| showControls \|\| editingId !== null/);
+  assert.match(source("components/Chrome.tsx"), /calm-view-strip/);
+  assert.match(source("components/Chrome.tsx"), /ProfileSwitcher/);
+  assert.match(source("app/layout.tsx"), /title: "HealthThread"/);
+  assert.match(source("app/layout.tsx"), /<ProfileProvider>/);
+  assert.match(source("components/TopNav.tsx"), /aria-label="HealthThread home"/);
   console.log("PASS merged UI contracts: navigation/profile integration, baseline state, wearable-only history, upload context, voice cleanup, deep links");
+  console.log("PASS HealthThread/Calm View merge: branding and calm controls retain backend summary generation, approval and speech, and real profiles");
 }
 void main().catch(error => { console.error(error); process.exitCode = 1; });

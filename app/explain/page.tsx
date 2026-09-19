@@ -17,9 +17,25 @@ import { useSpeaker } from "@/components/voice/useSpeaker";
 import { SummaryEditor } from "@/components/explain/SummaryEditor";
 import { HelpTip } from "@/components/HelpTip";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { useSettings } from "@/components/a11y/SettingsProvider";
 import { useT } from "@/components/a11y/useT";
 import { summaryForDisplay } from "@/lib/health/summary";
 import { relativeDays } from "@/lib/dates";
+
+function CalmDetails({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <details className="calm-details">
+      <summary>{title}</summary>
+      <div className="calm-details-content">{children}</div>
+    </details>
+  );
+}
 
 export default function ExplainPage() {
   const {
@@ -33,6 +49,8 @@ export default function ExplainPage() {
   const summary = summaryForDisplay(storedSummary, events);
   const speech = useSpeaker();
   const { t } = useT();
+  const { settings } = useSettings();
+  const calmMode = settings.lowStimulation;
 
   const [working, setWorking] = useState(false);
 
@@ -62,9 +80,47 @@ export default function ExplainPage() {
     speech.prewarm(approvedText, "patient");
   }, [getApprovedSpeech, summary, saveSummary, speech]);
 
+  const quotedStatements = summary ? (
+    <ul className="mt-3 space-y-2">
+      {summary.quotedStatements.map((quote, index) => (
+        <li key={index} className="border-l-2 border-line pl-3">
+          <p className="italic text-ink">&ldquo;{quote.text}&rdquo;</p>
+          <p className="text-sm text-muted">
+            {relativeDays(quote.when)}
+            {quote.language !== "en" && t("explain.saidIn", { lang: quote.language })}
+          </p>
+        </li>
+      ))}
+    </ul>
+  ) : null;
+  const speakingSpeedControl = (
+    <label className="flex max-w-sm flex-col gap-1">
+      <span className="label">{t("explain.speakingSpeed")}</span>
+      <input
+        type="range"
+        min={0.6}
+        max={1.4}
+        step={0.1}
+        value={speech.rate}
+        onChange={(event) => speech.setRate(Number(event.target.value))}
+      />
+      <span className="text-sm text-muted">
+        {speech.rate < 0.9
+          ? t("explain.slower")
+          : speech.rate > 1.1
+            ? t("explain.faster")
+            : t("explain.normalSpeed")}
+      </span>
+    </label>
+  );
+
   return (
     <div className="space-y-8">
-      <PageHeader title={t("explain.heading")} description={t("explain.intro")} actions={<HelpTip topic="explain" />} />
+      <PageHeader
+        title={t("explain.heading")}
+        description={t("explain.intro")}
+        actions={<span data-density-hide><HelpTip topic="explain" /></span>}
+      />
 
       {loading ? (
         <p className="text-muted">{t("explain.loading")}</p>
@@ -93,39 +149,52 @@ export default function ExplainPage() {
               {t("explain.writtenAgo", { when: relativeDays(summary.generatedAt) })}
               {summary.source === "llm" ? t("explain.wordingPolished") : ""}
             </p>
-            <button
-              type="button"
-              className="btn btn-sm btn-ghost"
-              onClick={() => void generate()}
-              disabled={working}
-            >
-              <RefreshCw className={working ? "h-4 w-4 animate-spin" : "h-4 w-4"} aria-hidden />
-              {t("explain.writeAgain")}
-            </button>
+            {calmMode ? (
+              <div className="w-full max-w-sm">
+                <CalmDetails title={t("explain.moreOptions")}>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-secondary"
+                    onClick={() => void generate()}
+                    disabled={working}
+                  >
+                    <RefreshCw className={working ? "h-4 w-4 animate-spin" : "h-4 w-4"} aria-hidden />
+                    {t("explain.writeAgain")}
+                  </button>
+                </CalmDetails>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost"
+                onClick={() => void generate()}
+                disabled={working}
+              >
+                <RefreshCw className={working ? "h-4 w-4 animate-spin" : "h-4 w-4"} aria-hidden />
+                {t("explain.writeAgain")}
+              </button>
+            )}
           </div>
 
-          <SummaryEditor summary={summary} onChange={saveSummary} disabled={working} />
+          <SummaryEditor summary={summary} onChange={saveSummary} disabled={working} calmMode={calmMode} />
 
           {/* The patient's verbatim words travel with the summary. */}
           {summary.quotedStatements.length > 0 && (
-            <section aria-labelledby="quotes-heading" className="border-t border-line pt-8">
-              <h2 id="quotes-heading" className="flex items-center gap-2 text-lg font-semibold text-ink">
-                <Quote className="h-4 w-4" aria-hidden />
-                {t("explain.quotesHeading")}
-              </h2>
-              <p className="mt-1 text-sm text-muted">{t("explain.quotesBody")}</p>
-              <ul className="mt-3 space-y-2">
-                {summary.quotedStatements.map((q, i) => (
-                  <li key={i} className="border-l-2 border-line pl-3">
-                    <p className="italic text-ink">&ldquo;{q.text}&rdquo;</p>
-                    <p className="text-sm text-muted">
-                      {relativeDays(q.when)}
-                      {q.language !== "en" && t("explain.saidIn", { lang: q.language })}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            calmMode ? (
+              <CalmDetails title={t("explain.quotesHeading")}>
+                <p className="text-sm text-muted">{t("explain.quotesBody")}</p>
+                {quotedStatements}
+              </CalmDetails>
+            ) : (
+              <section aria-labelledby="quotes-heading" className="border-t border-line pt-8">
+                <h2 id="quotes-heading" className="flex items-center gap-2 text-lg font-semibold text-ink">
+                  <Quote className="h-4 w-4" aria-hidden />
+                  {t("explain.quotesHeading")}
+                </h2>
+                <p className="mt-1 text-sm text-muted">{t("explain.quotesBody")}</p>
+                {quotedStatements}
+              </section>
+            )
           )}
 
           {/* --- Approval gate ------------------------------------------- */}
@@ -176,27 +245,18 @@ export default function ExplainPage() {
                     {t("explain.showMyDoctor")}
                   </Link>
 
-                  <HelpTip topic="speakForMe" />
+                  <span data-density-hide><HelpTip topic="speakForMe" /></span>
                 </div>
 
-                <label className="mt-4 flex max-w-sm flex-col gap-1">
-                  <span className="label">{t("explain.speakingSpeed")}</span>
-                  <input
-                    type="range"
-                    min={0.6}
-                    max={1.4}
-                    step={0.1}
-                    value={speech.rate}
-                    onChange={(e) => speech.setRate(Number(e.target.value))}
-                  />
-                  <span className="text-sm text-muted">
-                    {speech.rate < 0.9
-                      ? t("explain.slower")
-                      : speech.rate > 1.1
-                        ? t("explain.faster")
-                        : t("explain.normalSpeed")}
-                  </span>
-                </label>
+                {calmMode ? (
+                  <div className="mt-4 max-w-sm">
+                    <CalmDetails title={t("explain.speakingOptions")}>
+                      {speakingSpeedControl}
+                    </CalmDetails>
+                  </div>
+                ) : (
+                  <div className="mt-4">{speakingSpeedControl}</div>
+                )}
               </>
             ) : (
               <>

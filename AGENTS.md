@@ -45,6 +45,25 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
+### HealthThread branding / Calm View merge (September 19, 2026)
+
+Merged incoming `3e3a8c9` (HealthThread branding) and `4a18ff9` (Calm View)
+with the complete local backend/profile integration and Fitbit fix `9d15a49`.
+The Explain conflict retains the incoming disclosure controls, quotes and speed
+options, while summary generation, approval prewarming and Speak for Me continue
+using the profile-scoped backend. The layout and both navigation/clinician headers
+retain real profile controls alongside the new branding and calm-mode strip.
+Regression assertions cover these combined contracts. Local-only implementation
+files and incoming-only UI files were checked for accidental overwrites.
+The user authorized merging and pushing the combined main branch to GitHub;
+public deployment remains out of scope. Pre-merge local work is preserved at
+`backup/pre-healththread-merge-9d15a49`. Credentials, patient records, and the
+unrelated untracked `.cursor/` directory are excluded from the commit.
+Verification: all nine suites, typecheck, production build and six HTTP route
+smoke checks passed. The merged build is running locally on port 3000. Browser
+interaction was limited by the existing migration-review gate; its ownership
+choices were left untouched, not bypassed for testing.
+
 ### Live Fitbit import correction (September 19, 2026)
 
 Personal Google authorization and resting-heart-rate sync now work. The live
@@ -61,8 +80,8 @@ includes civil/UTC/offset boundaries, invalid timing, duplicate sleep sessions,
 cross-year step chunks, per-chunk pagination, failed chunks, auth and page limits.
 All nine verification suites (including 17 API/OAuth groups), standalone typecheck,
 production build and diff whitespace checks passed. The updated production build
-was restarted on loopback port 3000. The user requested a local commit of this
-backend fix; no push or public deployment is authorized.
+was restarted on loopback port 3000. The backend fix was committed as `9d15a49`;
+the subsequent GitHub merge/push is described above. No public deployment.
 
 ### Integrated GitHub UI and local profiles (September 19, 2026)
 

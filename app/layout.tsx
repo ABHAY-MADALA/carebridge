@@ -14,9 +14,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "CareBridge",
+  title: "HealthThread",
   description:
-    "Tell CareBridge what is happening however you can. It organizes your health information and helps you explain it to your doctor.",
+    "Tell HealthThread what is happening however you can. It organizes your health information and helps you explain it to your doctor.",
 };
 
 // Applied before first paint so a high-contrast or large-text user never sees

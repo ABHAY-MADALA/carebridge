@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { TopNav } from "@/components/TopNav";
 import { SideNav } from "@/components/SideNav";
 import { ReadAloud } from "@/components/a11y/ReadAloud";
+import { useSettings } from "@/components/a11y/SettingsProvider";
 import { useT } from "@/components/a11y/useT";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { DemoIndicator, ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
@@ -28,6 +29,7 @@ export function Chrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const clinician = pathname === "/clinician";
   const { t } = useT();
+  const { settings, update } = useSettings();
 
   if (clinician) {
     return (
@@ -58,6 +60,20 @@ export function Chrome({ children }: { children: React.ReactNode }) {
   return (
     <div className={`min-h-screen${pathname === "/body-picture" ? " body-screen-shell" : ""}`}>
       <TopNav />
+      {settings.lowStimulation && (
+        <div className="calm-view-strip" role="status" aria-live="polite">
+          <div className="calm-view-strip-inner">
+            <Sparkles aria-hidden />
+            <span className="calm-view-strip-copy">
+              <strong>{t("a11yBar.calmViewOn")}</strong>
+              <small>{t("a11yBar.calmViewHint")}</small>
+            </span>
+            <button type="button" onClick={() => update({ lowStimulation: false })}>
+              {t("a11yBar.turnOffCalmView")}
+            </button>
+          </div>
+        </div>
+      )}
       <ReadAloud />
       <div className="patient-frame">
         <div className="patient-main-column">
