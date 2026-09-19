@@ -39,6 +39,9 @@ async function main() {
       assert.equal(session.data.profile.id, "personal");
       const health = await request("health"); assert.equal(health.data.events.length, 0);
       assert.equal(health.data.baseline.message, "Building your baseline"); assert.equal(health.data.detection.triggered, false);
+      const emptySummary = await request("summary/generate", {});
+      assert.equal(emptySummary.response.status, 409);
+      assert.equal(emptySummary.data.error, "summary-source-records-required");
     });
     await check("CSRF, unknown identities, missing/stale context rejected", async () => {
       assert.equal((await request("events", {}, { origin: "https://attacker.invalid" })).response.status, 403);

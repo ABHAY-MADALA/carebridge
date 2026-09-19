@@ -359,6 +359,9 @@ export const messages = {
       intro:
         "HealthThread writes this from what you recorded. Read it, change anything you want, and remove anything you would rather keep private. Nothing is shared until you approve it.",
       loading: "Loading your health information...",
+      emptyHeading: "There is nothing to summarize yet",
+      emptyBody: "Add some health information first. HealthThread will only write a summary from records you have actually saved.",
+      addHealthInfo: "Add health information",
       readyHeading: "Ready when you are",
       readyBody: "HealthThread will put together a short summary of the last week using only your own records.",
       writeSummary: "Write my summary",
@@ -953,6 +956,9 @@ export const messages = {
       intro:
         "HealthThread escribe esto a partir de lo que registraste. Léelo, cambia lo que quieras y elimina lo que prefieras mantener privado. Nada se comparte hasta que lo apruebes.",
       loading: "Cargando tu información de salud...",
+      emptyHeading: "Todavía no hay nada que resumir",
+      emptyBody: "Primero añade información de salud. HealthThread solo escribirá un resumen a partir de los registros que realmente hayas guardado.",
+      addHealthInfo: "Añadir información de salud",
       readyHeading: "Listo cuando tú lo estés",
       readyBody: "HealthThread armará un breve resumen de la última semana usando solo tus propios registros.",
       writeSummary: "Escribir mi resumen",

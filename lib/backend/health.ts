@@ -35,6 +35,9 @@ export function aiContext(store: ProfileStore) {
 }
 export function generateSummary(store: ProfileStore) {
   const ctx = aiContext(store);
+  if (ctx.events.length === 0 && ctx.metrics.length === 0) {
+    throw new BackendError(409, "summary-source-records-required");
+  }
   return { ...buildSummary(ctx.events, ctx.metrics, ctx.detection), userId: store.userId, synthetic: store.userId === "alex-demo" };
 }
 export async function generateSummaryForProfile(store: ProfileStore) {

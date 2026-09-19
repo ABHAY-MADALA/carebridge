@@ -45,6 +45,16 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
+### Empty-profile summary guard (September 19, 2026)
+
+Help Me Explain now shows a clear empty state when the active profile has no
+saved events or daily measurements, even if a stale empty summary exists. The
+UI no longer offers summary generation or approval in that state. The backend
+also rejects both blank-profile generation and summary saves with
+`summary-source-records-required`, so direct requests cannot bypass the guard.
+English and Spanish empty-state copy links the patient to Add health info.
+All nine verification suites, typecheck, and the production build pass.
+
 ### Body Picture theme-control cleanup (September 19, 2026)
 
 Removed the duplicate page-level Light/Dark mode button from Body Picture. The

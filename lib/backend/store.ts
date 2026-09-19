@@ -96,6 +96,9 @@ export class ProfileStore {
   }
   summary() { const value = this.get("summary", "current"); return value ? OwnedSummary.parse(value) : null; }
   saveSummary(input: unknown, approved: boolean) {
+    if (this.events().length === 0 && this.daily().length === 0) {
+      throw new BackendError(409, "summary-source-records-required");
+    }
     this.owned(input);
     const summary = OwnedSummary.parse(this.stamp({ ...DoctorSummary.parse(input), approved, approvedAt: approved ? new Date().toISOString() : null }));
     this.put("summary", "current", summary); return summary;

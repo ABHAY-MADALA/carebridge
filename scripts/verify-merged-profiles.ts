@@ -76,6 +76,8 @@ async function main() {
   assert.match(source("components/ui/CollapsibleSection.tsx"), /hashchange/);
   assert.match(source("app/body-picture/page.tsx"), /disabled=\{!canReview \|\| voice.recording \|\| voice.transcribing\}/);
   const explain = source("app/explain/page.tsx");
+  assert.match(explain, /const hasSummarySourceData = events\.length > 0 \|\| metrics\.length > 0/);
+  assert.match(explain, /!hasSummarySourceData/);
   assert.match(explain, /await generateSummary\(\)/);
   assert.match(explain, /await saveSummary\(approved\)/);
   assert.match(explain, /const approvedText = await getApprovedSpeech\(\)/);
