@@ -91,8 +91,10 @@ Original file bytes are stored in IndexedDB and remain separate from patient-aut
 health facts; selecting a file only stages it. The page also presents an honest
 HIE/FHIR connection flow: no organization is shown as connected until a real
 provider/payer integration, identity flow and patient consent exist. The dark
-palette now uses deeper blue-charcoal surfaces, clearer elevation and warm restrained
-accents. The former Timeline and Health Changes routes still redirect into the
+palette uses near-black graphite/navy surfaces, crisp blue-gray borders, an
+ice-blue primary accent, and amber only for genuine change warnings. Dark-only
+card depth, button states, form fields, anatomy selection, and the 3D body material
+were tuned together; the light palette is unchanged. The former Timeline and Health Changes routes still redirect into the
 merged `/my-health` view. Typecheck, all five verification suites, production build,
 diff whitespace checks, 1280px desktop/light/dark and 390px mobile navigation were
 exercised. No file was uploaded during QA, and no Git commit or push was made.

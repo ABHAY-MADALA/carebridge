@@ -57,7 +57,7 @@ function Human({ value, onChange, marker, onMarker, dark, highContrast, onReady 
   }, [model]);
   const uniforms = useMemo(() => ({ point: { value: new Vector3(0, -10, 0) }, enabled: { value: 0 } }), []);
   const material = useMemo(() => {
-    const mat = new MeshPhysicalMaterial({ color: highContrast ? "#999999" : dark ? "#8b8177" : "#b1a69a", roughness: .78, metalness: .02, clearcoat: 0 });
+    const mat = new MeshPhysicalMaterial({ color: highContrast ? "#999999" : dark ? "#748396" : "#b1a69a", roughness: .78, metalness: .02, clearcoat: 0 });
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.cbPoint = uniforms.point;
       shader.uniforms.cbEnabled = uniforms.enabled;
