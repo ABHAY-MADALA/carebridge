@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, ArrowRight, ChevronDown } from "lucide-react";
 import type { TrendDetection } from "@/lib/schema";
 import { METRICS } from "@/lib/health/metrics";
 import { WhyAmISeeingThis } from "./WhyAmISeeingThis";
@@ -18,42 +19,56 @@ import { useT } from "@/components/a11y/useT";
 export function ChangeBanner({
   detection,
   showLink = true,
+  defaultOpen = false,
 }: {
   detection: TrendDetection;
   showLink?: boolean;
+  defaultOpen?: boolean;
 }) {
   const { t } = useT();
+  const [open, setOpen] = useState(defaultOpen);
   if (!detection.triggered) return null;
 
   const names = detection.signals.map((s) => METRICS[s.metric].label.toLowerCase());
   const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0];
 
   return (
-    <section className="rounded-lg border border-line bg-warn-soft p-5 md:p-6" aria-labelledby="change-heading">
-      <div className="flex items-start gap-3">
-        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-warn" aria-hidden />
-        <div className="min-w-0">
-          <h2 id="change-heading" className="text-lg font-semibold text-ink">
-            {t("changeBanner.heading")}
-          </h2>
-          <p className="mt-1 text-base text-ink">{t("changeBanner.body", { list })}</p>
-          <p className="mt-1 text-sm text-muted">{t("changeBanner.disclaimer")}</p>
+    <section className={`change-banner ${open ? "is-open" : ""}`} aria-labelledby="change-heading">
+      <div className="change-banner-summary">
+        <span className="change-banner-icon"><AlertCircle aria-hidden /></span>
+        <div className="min-w-0 flex-1">
+          <p className="label mb-1 !text-[0.6875rem] !tracking-[0.14em]">{t("nav.myHealth")}</p>
+          <h2 id="change-heading" className="text-lg font-semibold text-ink">{t("changeBanner.heading")}</h2>
+          <p className="mt-1 text-sm leading-relaxed text-muted md:text-base">{t("changeBanner.body", { list })}</p>
+        </div>
+        <button
+          type="button"
+          className="change-banner-toggle"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          aria-controls="change-banner-details"
+        >
+          <span>{open ? t("myHealth.hideDetails") : t("myHealth.reviewChange")}</span>
+          <ChevronDown aria-hidden />
+        </button>
+      </div>
 
-          <WhyAmISeeingThis detection={detection} />
+      {open && (
+        <div id="change-banner-details" className="change-banner-details fade-up">
+          <p className="text-sm text-muted">{t("changeBanner.disclaimer")}</p>
+          <WhyAmISeeingThis detection={detection} defaultOpen />
 
-          {showLink ? (
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Link href="/insights" className="btn btn-sm btn-secondary">
+          <div className="mt-4 flex flex-wrap gap-3">
+            {showLink && (
+              <Link href="/my-health#patterns" className="btn btn-sm btn-secondary">
                 {t("changeBanner.seeDetails")}
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden />
               </Link>
-              <Link href="/explain" className="btn btn-sm btn-primary">
-                {t("changeBanner.helpExplain")}
-              </Link>
-            </div>
-          ) : null}
+            )}
+            <Link href="/explain" className="btn btn-sm btn-primary">{t("changeBanner.helpExplain")}</Link>
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

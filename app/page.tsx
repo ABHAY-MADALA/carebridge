@@ -3,13 +3,15 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Mic, PersonStanding, Send, Watch, MessageCircle, ClipboardList } from "lucide-react";
+import { ArrowRight, Clock3, Mic, PersonStanding, Send, Watch, MessageCircle, ClipboardList } from "lucide-react";
 import { Tutorial } from "@/components/onboarding/Tutorial";
 import { ChangeBanner } from "@/components/insights/ChangeBanner";
 import { useHealthData } from "@/components/health/useHealthData";
 import { useT } from "@/components/a11y/useT";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { TimelineEntry } from "@/components/ui/TimelineEntry";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { HelpTip } from "@/components/HelpTip";
 import { fitbitSource } from "@/lib/health/sources";
 import { sendToAssistant } from "@/lib/assistantHandoff";
 import { formatDayHeading, formatTime, dateKeyOf } from "@/lib/dates";
@@ -133,39 +135,47 @@ export default function HomePage() {
 
       {!loading && detection?.triggered && <ChangeBanner detection={detection} />}
 
-      <section aria-labelledby="today-heading">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 id="today-heading" className="text-lg font-semibold text-ink">
-            {t("home.recentHeading")}
-          </h2>
-          <Link href="/timeline" className="inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline">
-            {t("home.seeEverything")}
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-          </Link>
-        </div>
-
+      <CollapsibleSection
+        id="recent"
+        title={t("home.recentHeading")}
+        summary={
+          loading
+            ? t("home.loadingHealth")
+            : recent.length
+              ? `${recent.length} ${recent.length === 1 ? "entry" : "entries"} · ${recent[0].label}`
+              : t("home.nothingRecorded")
+        }
+        icon={<Clock3 aria-hidden />}
+        help={<HelpTip topic="timeline" compact align="right" />}
+      >
         {loading ? (
           <p className="text-sm text-muted">{t("home.loadingHealth")}</p>
         ) : recent.length === 0 ? (
           <p className="text-sm text-muted">{t("home.nothingRecorded")}</p>
         ) : (
-          <ul>
-            {recent.map((e, i) => (
-              <TimelineEntry
-                key={e.id}
-                last={i === recent.length - 1}
-                time={`${formatDayHeading(dateKeyOf(e.occurredAt))} · ${formatTime(e.occurredAt)}`}
-                title={
-                  <span className="inline-flex items-center gap-2">
-                    {e.label}
-                    {e.severity !== null && <span className="text-muted"> &middot; {e.severity}/10</span>}
-                  </span>
-                }
-              />
-            ))}
-          </ul>
+          <>
+            <ul>
+              {recent.map((e, i) => (
+                <TimelineEntry
+                  key={e.id}
+                  last={i === recent.length - 1}
+                  time={`${formatDayHeading(dateKeyOf(e.occurredAt))} · ${formatTime(e.occurredAt)}`}
+                  title={
+                    <span className="inline-flex items-center gap-2">
+                      {e.label}
+                      {e.severity !== null && <span className="text-muted"> &middot; {e.severity}/10</span>}
+                    </span>
+                  }
+                />
+              ))}
+            </ul>
+            <Link href="/my-health#recent" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline">
+              {t("home.seeEverything")}
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </Link>
+          </>
         )}
-      </section>
+      </CollapsibleSection>
 
       {fitbitConnected !== null && (
         <Link

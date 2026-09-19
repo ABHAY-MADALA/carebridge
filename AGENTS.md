@@ -72,8 +72,64 @@ All tasks complete. The app builds, typechecks, and `npm run verify` passes.
 | 20 | Reference-led charcoal/sand UI, persisted light/dark toggle, original interactive front/back SVG anatomy, compact symptom panel | done |
 | 21 | Realistic local CC0 human mesh, reference-style 3D workspace, surface pain glow, four camera presets, zoom/expand, dark/light materials | done |
 | 22 | Focused demo-readiness fixes: onset provenance, calm measurements, consistent navigation, guided icons, single body action, confirmed Timeline removal, loading/retry, Timer compatibility | done |
+| 23 | UI cleanup: horizontal top navigation, merged My Health record/pattern view, disclosure sections, grouped account settings, inline navigation help | done |
+| 24 | Persistent grouped side navigation, full help read-aloud, polished dark theme, local records upload, and consented HIE/FHIR connection surface | done |
 
 ### Latest UI revision (September 19, 2026)
+
+The current cleanup keeps navigation continuously visible in a sticky right-side
+rail at desktop widths and uses a compact top menu only when the viewport cannot
+fit both content and rail. Eight destinations read as five choices: Home; Add
+health info (Tell, Body Picture, Guided Check-In); My Health; Health Records; and
+Doctor visit (Help Me Explain, Show My Doctor). Theme, accessibility settings, and
+the Alex profile chip stay grouped in the header. Every main choice has an English
+and Spanish info control; `ReadAloud` prefers each control's full
+`data-read-aloud-text`, so an info button speaks its full what/how explanation.
+
+`/records` adds an explicit-confirmation upload flow for PDF, images, XML and JSON.
+Original file bytes are stored in IndexedDB and remain separate from patient-authored
+health facts; selecting a file only stages it. The page also presents an honest
+HIE/FHIR connection flow: no organization is shown as connected until a real
+provider/payer integration, identity flow and patient consent exist. The dark
+palette now uses deeper blue-charcoal surfaces, clearer elevation and warm restrained
+accents. The former Timeline and Health Changes routes still redirect into the
+merged `/my-health` view. Typecheck, all five verification suites, production build,
+diff whitespace checks, 1280px desktop/light/dark and 390px mobile navigation were
+exercised. No file was uploaded during QA, and no Git commit or push was made.
+
+Incremental accessibility/body-map follow-up: every desktop side-rail dimension
+that affects legibility (column width, labels, helper text, icons, row heights and
+spacing) now uses `rem`, so the Small/Normal/Large/Largest root setting scales the
+rail as well as page content. At Large the rail is 357.5px with 16.25px primary
+labels; at Largest it becomes 411.125px with 18.6875px labels. Body Picture now
+distinguishes `Left pelvis`, `Right pelvis`, and center `Pelvis` from 3D surface
+coordinates, in the split 2D SVG, the accessible region list, English/Spanish
+labels, and the deterministic text parser. A selection creates an always-visible,
+non-editable location sentence alongside the patient's optional description; that
+sentence, precise `bodyLocation`, and location-specific pain label all appear in
+review and are saved only after the existing final confirmation. Verification
+covered both pelvis sides and center, typecheck, all suites, production build, and
+live Right pelvis selection through review without saving.
+
+The next precision pass replaces broad bilateral zones that were still ambiguous.
+Front/back torso clicks now resolve to left/right/center chest, upper/lower abdomen,
+pelvis, and upper/lower back. Limbs resolve to shoulder, upper arm, elbow, forearm,
+hand, thigh, knee, lower leg, and foot, always patient-left/patient-right. The
+outer-upper-torso boundary was tightened so a deltoid click is a shoulder rather
+than chest; thigh and lower-leg clicks no longer collapse to a generic leg. The
+3D hit mapper, marker anchors, split 2D SVG, accessible region list, English/Spanish
+labels, deterministic text parser, review text, and stored `bodyLocation` share
+these exact terms. Automated checks cover the reported shoulder/chest boundary,
+right thigh versus right lower leg, back side, pelvis sides/center, and typed
+English/Spanish phrases. Live QA selected and reviewed Right chest, Right thigh,
+and Right lower leg without performing the final save.
+
+Sidebar help dialogs are portaled to the viewport rather than rendered inside
+the rail's scroll container. They stay anchored to the selected info button,
+clamp to the screen edges, flip above lower controls when needed, and gain their
+own vertical scroll only if the explanation is taller than the viewport. Live QA
+covered My Health and Doctor visit help at the Largest text setting in a
+1280×800 viewport; both dialogs remained fully visible and readable.
 
 Content-only follow-up: onset summaries now use at most two short patient-voice
 sentences. Exact agreement says when the symptom started; earlier related records
@@ -196,9 +252,12 @@ app/
   body-picture/page.tsx     The flagship 3D body-region picker (see components/body/)
   guided-check-in/page.tsx  ManualEntry with forceWizard — one question at a time,
                           independent of the Low Stimulation setting
-  my-health/page.tsx        FitbitConnect in full, + quiet "future connections"
-  timeline/page.tsx       Day-grouped record as a real vertical chronology
-  insights/page.tsx       Change banner, why-panel, charts, cycle-phase comparison
+  my-health/page.tsx        Unified record: changes, cycle-aware patterns/charts,
+                            event history, Fitbit, and future connections
+  records/page.tsx          Explicit-confirmation local document upload plus an
+                            honest consented HIE/FHIR connection explanation
+  timeline/page.tsx         Compatibility redirect to /my-health#recent
+  insights/page.tsx         Compatibility redirect to /my-health#patterns
   explain/page.tsx        Generate / edit / approve / Speak for Me
   clinician/page.tsx      Chrome-free approved summary + advocate + doctor tools
   api/
@@ -212,21 +271,26 @@ app/
     translate/            Patient's language -> English, additively
     fitbit/               OAuth + sync against the Google Health API (see below)
 components/
-  Chrome.tsx              Sidebar (desktop) + MobileNav (top bar + bottom nav) outside
-                          /clinician; a minimal chrome-free header on it
-  Sidebar.tsx / MobileNav.tsx  The nav link list lives in each (kept small and
-                          duplicated rather than abstracted — different shapes, not
-                          worth a shared config for 8 links)
+  Chrome.tsx              TopNav + SideNav outside /clinician; a minimal chrome-free
+                          header on the clinician view
+  TopNav.tsx              Grouped theme/settings/profile controls and compact menu
+                          below the side-rail breakpoint
+  SideNav.tsx             Sticky desktop navigation; related capture and visit tools
+                          are nested so it reads as five primary choices
   BrandMark.tsx           Two overlapping circles. The entire logo, deliberately
   ui/                     Reusable primitives: PageHeader, SectionHeader,
                           SegmentedControl, HealthMetric (usual/recent/delta row),
-                          TimelineEntry (dot+line+content), SourceBadge (Fitbit tag)
+                          TimelineEntry (dot+line+content), SourceBadge (Fitbit tag),
+                          CollapsibleSection (summarized disclosure container)
   body/                   Body Picture. BodyScene.tsx (local human R3F/three.js scene,
                           lazy-loaded), BodyPicker.tsx (lazy-loads BodyScene behind an
                           error boundary, always pairs it with BodyRegionList),
                           BodyRegionList.tsx (the accessible fallback — same region
                           ids, plain buttons), BodyPickerErrorBoundary.tsx
   health/FitbitConnect.tsx  Setup required / Disconnected / Connected states, never faked
+  health/HealthHistory.tsx  Shared day-grouped health-event chronology inside My Health
+  records/                 RecordUploader (stage, confirm, IndexedDB save/open) and
+                           RecordConnection (permission-first HIE/FHIR explanation)
   HelpTip.tsx             The circled i. Copy lives in lib/i18n/messages.ts now
   a11y/                   SettingsProvider (text size, contrast, motion, density,
                           language), AccessibilityControls (the actual toggles,
@@ -262,6 +326,8 @@ lib/
   assistantHandoff.ts     sessionStorage handoff so Home can start a fresh
                           /tell-carebridge conversation (typed text, a mood prompt,
                           or "start recording") without duplicating chat state
+  records/documentStore.ts  IndexedDB store for original uploaded files; documents
+                            do not enter the event repository automatically
   body/regions.ts         BODY_REGIONS — the single list of selectable region ids,
                           shared by Body3D (visual placement) and BodyRegionList
                           (the accessible fallback), so the two pickers can't drift

@@ -7,6 +7,7 @@ import { buildSummary, summaryForDisplay, summaryToText } from "../lib/health/su
 import { measurementComparison } from "../lib/health/measurementComparison";
 import { TimerClock } from "../lib/body/TimerClock";
 import { messages } from "../lib/i18n/messages";
+import { BODY_REGIONS, bodyRegionAt } from "../lib/body/regions";
 
 const now = new Date("2026-09-19T12:00:00");
 const event = (date: string, onset: string | null = null, occurredAt = date) => HealthEvent.parse({ id: date, label: "Abdominal pain", category: "pain", recordedAt: date, occurredAt, onset, inputMethod: "form", severity: 5 });
@@ -111,4 +112,16 @@ assert.equal(messages.en.bodyPicture.addToTimeline, "Add to Timeline");
 assert.doesNotMatch(readFileSync("app/body-picture/page.tsx", "utf8"), /Save to Timeline/);
 assert.doesNotMatch(readFileSync("components/manual/ManualEntry.tsx", "utf8"), /CATEGORY_EMOJI/);
 assert.match(readFileSync("components/ui/EntryActions.tsx", "utf8"), /Keep entry/);
+assert.ok(BODY_REGIONS.some((region) => region.id === "Left pelvis"));
+assert.ok(BODY_REGIONS.some((region) => region.id === "Right pelvis"));
+assert.equal(bodyRegionAt({ x: -.11, y: .92 }, 1), "Right pelvis");
+assert.equal(bodyRegionAt({ x: .11, y: .92 }, 1), "Left pelvis");
+assert.equal(bodyRegionAt({ x: 0, y: .92 }, 1), "Center pelvis");
+assert.equal(bodyRegionAt({ x: -.15, y: 1.36 }, 1), "Right chest");
+assert.equal(bodyRegionAt({ x: -.24, y: 1.36 }, 1), "Right shoulder");
+assert.equal(bodyRegionAt({ x: -.12, y: .70 }, 1), "Right thigh");
+assert.equal(bodyRegionAt({ x: -.12, y: .30 }, 1), "Right lower leg");
+assert.equal(bodyRegionAt({ x: .10, y: 1.30 }, -.8), "Left upper back");
+assert.match(messages.en.bodyPicture.locationRecorded, /location/i);
+assert.match(readFileSync("app/body-picture/page.tsx", "utf8"), /recordedLocation,[\s\S]*descriptors/);
 console.log("UI regression checks passed: onset, legacy display, measurement values, Timer timing, guarded dependency transform, labels and action contracts.");

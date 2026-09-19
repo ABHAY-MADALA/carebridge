@@ -4,7 +4,7 @@
 
   Run with: npx tsx scripts/verify-fallback.ts
 */
-import { fallbackTurn, extractSeverity, extractOnset } from "../lib/ai/fallback";
+import { fallbackTurn, extractDrafts, extractSeverity, extractOnset } from "../lib/ai/fallback";
 
 let failures = 0;
 
@@ -91,6 +91,31 @@ console.log("\n--- Spanish ---");
   check(t.drafts[0]?.category === "pain", "recognises pain");
   check(t.drafts[0]?.onset === "yesterday", "reads 'desde ayer'", String(t.drafts[0]?.onset));
   check(t.drafts[0]?.severity === null, "does not read 'mucho' as a number");
+}
+
+console.log("\n--- Patient-relative pelvis sides ---");
+{
+  const right = extractDrafts("My right pelvis hurts.")[0];
+  const left = extractDrafts("Me duele la pelvis izquierda.")[0];
+  check(right?.bodyLocation === "Right pelvis", "keeps right pelvis precise", String(right?.bodyLocation));
+  check(right?.label === "Right pelvis pain", "labels right pelvis pain precisely", String(right?.label));
+  check(left?.bodyLocation === "Left pelvis", "recognises left pelvis in Spanish", String(left?.bodyLocation));
+}
+
+console.log("\n--- Clinician-precise body regions ---");
+{
+  const cases: [string, string][] = [
+    ["My right chest hurts.", "Right chest"],
+    ["Pain in my left upper arm.", "Left upper arm"],
+    ["My right forearm hurts.", "Right forearm"],
+    ["Pain in my right thigh.", "Right thigh"],
+    ["My left lower leg hurts.", "Left lower leg"],
+    ["Me duele el muslo derecho.", "Right thigh"],
+  ];
+  for (const [text, expected] of cases) {
+    const location = extractDrafts(text)[0]?.bodyLocation;
+    check(location === expected, `"${text}" -> ${expected}`, String(location));
+  }
 }
 
 console.log("\n--- Things that look like a severity but are not ---");

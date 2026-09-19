@@ -18,6 +18,8 @@ import { speak } from "@/lib/voice/speech";
 */
 
 function accessibleName(el: Element): string {
+  const fullText = el.getAttribute("data-read-aloud-text");
+  if (fullText?.trim()) return fullText.trim();
   const aria = el.getAttribute("aria-label");
   if (aria?.trim()) return aria.trim();
   return (el.textContent ?? "").trim();

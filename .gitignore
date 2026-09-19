@@ -5,6 +5,7 @@ build
 .DS_Store
 *.pem
 npm-debug.log*
+.npm-cache
 .env
 .env.local
 .env*.local
