@@ -145,6 +145,7 @@ scripts/
   verify-guards.ts        No-diagnosis guard, both directions
   verify-advocate.ts      Grounded answers, refusals, citations, summary safety
   check-voice.ts          What is configured + ElevenLabs quota
+  rehearse.ts             Walks the whole demo script against a running server
 ```
 
 ## Invariants a newcomer would otherwise break
@@ -191,7 +192,12 @@ npm install
 cp .env.local.example .env.local   # optional
 npm run dev                        # http://localhost:3000
 npm run verify && npm run typecheck && npm run build   # before committing
+npm run rehearse     # walks the demo script against a running dev server
 ```
+
+**Do not run `npm run build` while `npm run dev` is running.** They share
+`.next/`, and the build replaces the dev server's chunks, leaving every page a
+500 until dev is restarted. Stop dev first, or build in a separate checkout.
 
 ## Deliberate shortcuts — do not "fix" these
 

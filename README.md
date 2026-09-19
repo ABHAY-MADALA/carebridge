@@ -36,6 +36,7 @@ npm run check-voice                # what is configured, and ElevenLabs quota
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run verify` | Engine, parser, safety-guard and advocate checks |
 | `npm run check-voice` | Which services are live, plus remaining ElevenLabs quota |
+| `npm run rehearse` | Walks the whole demo script against a running dev server |
 
 ---
 

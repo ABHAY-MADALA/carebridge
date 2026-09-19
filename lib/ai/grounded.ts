@@ -76,6 +76,21 @@ type Matcher = {
   answer: (ctx: Context) => { text: string; ids: string[] } | null;
 };
 
+/*
+  "When did this start?" means this episode, not the whole record. Without a
+  window the answer reaches back to an unrelated period entry from last month.
+*/
+const EPISODE_DAYS = 7;
+
+function episode(events: HealthEvent[]): HealthEvent[] {
+  const cutoff = Date.now() - EPISODE_DAYS * 86_400_000;
+  return events.filter(
+    (e) =>
+      new Date(e.occurredAt).getTime() >= cutoff &&
+      ["pain", "fatigue", "illness"].includes(e.category),
+  );
+}
+
 function topSymptom(events: HealthEvent[], category?: string) {
   const pool = events.filter(
     (e) =>
@@ -111,19 +126,28 @@ const MATCHERS: Matcher[] = [
     // When did it start?
     test: /\b(when|how long|since when|start(?:ed)?|began|begin|onset)\b/i,
     answer: ({ events }) => {
-      const s = topSymptom(events);
-      if (!s) return null;
-      if (s.onset) {
+      const pool = episode(events);
+      if (!pool.length) return null;
+
+      // The patient's own words about onset beat our computed date.
+      const stated = pool.find((e) => e.onset);
+      const earliest = pool.reduce((a, b) => (a.occurredAt < b.occurredAt ? a : b));
+
+      if (stated) {
+        const ids = [...new Set([stated.id, earliest.id])];
         return {
-          text: `The ${s.label.toLowerCase()} started ${s.onset}. My first record of it was ${relativeDays(
-            s.occurredAt,
+          text: `The ${stated.label.toLowerCase()} started ${stated.onset}. My earliest record of this is from ${relativeDays(
+            earliest.occurredAt,
           )}.`,
-          ids: [s.id],
+          ids,
         };
       }
+
       return {
-        text: `My first record of the ${s.label.toLowerCase()} was ${relativeDays(s.occurredAt)}.`,
-        ids: [s.id],
+        text: `My earliest record of this is from ${relativeDays(
+          earliest.occurredAt,
+        )}, for ${earliest.label.toLowerCase()}.`,
+        ids: [earliest.id],
       };
     },
   },
