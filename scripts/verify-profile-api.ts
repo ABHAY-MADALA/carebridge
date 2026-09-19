@@ -39,6 +39,10 @@ async function main() {
       assert.equal(session.data.profile.id, "personal");
       const health = await request("health"); assert.equal(health.data.events.length, 0);
       assert.equal(health.data.baseline.message, "Building your baseline"); assert.equal(health.data.detection.triggered, false);
+      assert.equal(health.data.summaryAvailable, false);
+      const emptySummary = await request("summary/generate", {});
+      assert.equal(emptySummary.response.status, 409);
+      assert.equal(emptySummary.data.error, "summary-source-records-required");
     });
     await check("CSRF, unknown identities, missing/stale context rejected", async () => {
       assert.equal((await request("events", {}, { origin: "https://attacker.invalid" })).response.status, 403);
@@ -52,6 +56,7 @@ async function main() {
       assert.equal((await request("events", { confirmed: true, events: [{ ...entry, userId: "alex-demo" }] })).response.status, 403);
       const saved = await request("events", { confirmed: true, events: [entry] }); assert.equal(saved.response.status, 200);
       assert.equal(saved.data.events[0].userId, "personal"); assert.equal(saved.data.events[0].originalInput, entry.originalInput);
+      assert.equal((await request("health")).data.summaryAvailable, true);
     });
     await check("AI endpoints reject supplied cross-profile record context", async () => {
       assert.equal((await request("ask", { question: "When?", events: [{ userId: "alex-demo" }] })).response.status, 400);

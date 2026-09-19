@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { HealthEvent, type DailyMetric } from "../lib/schema";
 import { describeOnset } from "../lib/health/onset";
-import { buildSummary, summaryForDisplay, summaryToText } from "../lib/health/summary";
+import { buildSummary, summaryForDisplay, summaryHasContent, summaryToText } from "../lib/health/summary";
 import { measurementComparison } from "../lib/health/measurementComparison";
 import { TimerClock } from "../lib/body/TimerClock";
 import { messages } from "../lib/i18n/messages";
@@ -11,6 +11,7 @@ import { BODY_REGIONS, baseBodyLocation, bodyRegionAt, bodySurfaceAt, preciseBod
 
 const now = new Date("2026-09-19T12:00:00");
 const event = (date: string, onset: string | null = null, occurredAt = date) => HealthEvent.parse({ id: date, label: "Abdominal pain", category: "pain", recordedAt: date, occurredAt, onset, inputMethod: "form", severity: 5 });
+assert.equal(summaryHasContent(buildSummary([], [], null, now)), false, "an empty generated summary cannot be approved");
 const first = event("2026-09-16T12:00:00");
 const conflict = [first, event("2026-09-19T11:00:00", "Today")];
 const expectedConflict = "I said the abdominal pain started today. I also recorded related symptoms during the previous 3 days.";

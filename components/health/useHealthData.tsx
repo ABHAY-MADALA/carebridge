@@ -48,6 +48,7 @@ type Ctx = {
   detection: TrendDetection | null;
   baseline: BaselineSet | null;
   baselineInfo: BaselineResponse | null;
+  summaryAvailable: boolean;
   summary: DoctorSummary | null;
   saveDrafts: (drafts: DraftEvent[], inputMethod: InputMethod) => Promise<HealthEvent[]>;
   deleteEvent: (id: string) => Promise<void>;
@@ -71,6 +72,7 @@ export function HealthDataProvider({ children }: { children: React.ReactNode }) 
   const [detection, setDetection] = useState<TrendDetection | null>(null);
   const [baseline, setBaseline] = useState<BaselineSet | null>(null);
   const [baselineInfo, setBaselineInfo] = useState<BaselineResponse | null>(null);
+  const [summaryAvailable, setSummaryAvailable] = useState(false);
   const [summary, setSummary] = useState<DoctorSummary | null>(null);
   const [patientSettings, setPatientSettings] = useState<PatientSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,6 +95,7 @@ export function HealthDataProvider({ children }: { children: React.ReactNode }) 
       setDetection(health.detection);
       setBaseline(health.baseline.values);
       setBaselineInfo(health.baseline);
+      setSummaryAvailable(health.summaryAvailable);
       setTimeline(timelineResponse.entries);
       setSummary(summaryResponse.summary);
       setPatientSettings(settingsResponse.settings);
@@ -126,6 +129,7 @@ export function HealthDataProvider({ children }: { children: React.ReactNode }) 
     setDetection(null);
     setBaseline(null);
     setBaselineInfo(null);
+    setSummaryAvailable(false);
     setSummary(null);
     setPatientSettings(null);
     void refresh().finally(() => {
@@ -227,6 +231,7 @@ export function HealthDataProvider({ children }: { children: React.ReactNode }) 
       detection,
       baseline,
       baselineInfo,
+      summaryAvailable,
       summary,
       saveDrafts,
       deleteEvent,
@@ -248,6 +253,7 @@ export function HealthDataProvider({ children }: { children: React.ReactNode }) 
       detection,
       baseline,
       baselineInfo,
+      summaryAvailable,
       summary,
       saveDrafts,
       deleteEvent,

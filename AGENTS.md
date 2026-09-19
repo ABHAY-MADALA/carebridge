@@ -67,8 +67,23 @@ generic health-note fallback without invented facts, duplicate suppression,
 Personal/Alex isolation and confirmation. All verification suites, typecheck and
 the production build pass. Live UI QA covered Alex selection through the final
 confirmation screen without saving, Personal archive controls, dark mode and Large
-text. The refreshed build runs at `127.0.0.1:3000`. Changes are intentionally
-uncommitted and unpushed pending user review.
+text. The refreshed build runs at `127.0.0.1:3000`. The reviewed feature is
+committed as `06f68dd`; Abhay's summary-guard commits `27c775b` and `695cc3f` are
+preserved with it in the merged branch.
+
+### Empty-profile summary guard (September 19, 2026)
+
+Help Me Explain now shows a clear empty state when the active profile has no
+saved events or daily measurements, or when a generated/stored summary has no
+visible section or patient quote. The UI no longer offers approval in either
+state. The backend rejects blank-profile generation and saves with
+`summary-source-records-required`, and rejects content-empty summaries with
+`summary-content-required`, so direct requests cannot bypass the guard. The
+profile health snapshot exposes `summaryAvailable`, calculated by the same
+deterministic summary builder, so the UI does not offer generation merely
+because unrelated or insufficient database rows exist.
+English and Spanish empty-state copy links the patient to Add health info.
+All nine verification suites, typecheck, and the production build pass.
 
 ### Body Picture theme-control cleanup (September 19, 2026)
 

@@ -1,7 +1,7 @@
 import type { DailyMetric } from "@/lib/schema";
 import { computeBaseline } from "@/lib/health/baseline";
 import { detectTrend } from "@/lib/health/trends";
-import { buildSummary, summaryToText } from "@/lib/health/summary";
+import { buildSummary, summaryHasContent, summaryToText } from "@/lib/health/summary";
 import { fallbackAnswer, answerFromRecord } from "@/lib/ai/grounded";
 import { fallbackTurn } from "@/lib/ai/fallback";
 import { runAssistantTurn } from "@/lib/ai/assistant";
@@ -18,8 +18,10 @@ export function healthSnapshot(store: ProfileStore) {
   const detection = detectTrend(engineRows);
   const baseline = computeBaseline(engineRows, detection.phase, new Set(daily.slice(-detection.windowDays).map(m => m.date)));
   const missing = Object.entries(baseline).filter(([,stat]) => !stat).map(([key]) => key);
+  const summaryAvailable = summaryHasContent(buildSummary(events, engineRows, detection));
   return {
     userId: store.userId, synthetic: store.userId === "alex-demo", events, metrics: store.metrics(), daily,
+    summaryAvailable,
     detection: { ...detection, userId: store.userId },
     baseline: { userId: store.userId, values: baseline, missingMetrics: missing,
       status: missing.length ? "building" : "ready",
@@ -35,7 +37,14 @@ export function aiContext(store: ProfileStore) {
 }
 export function generateSummary(store: ProfileStore) {
   const ctx = aiContext(store);
-  return { ...buildSummary(ctx.events, ctx.metrics, ctx.detection), userId: store.userId, synthetic: store.userId === "alex-demo" };
+  if (ctx.events.length === 0 && ctx.metrics.length === 0) {
+    throw new BackendError(409, "summary-source-records-required");
+  }
+  const summary = buildSummary(ctx.events, ctx.metrics, ctx.detection);
+  if (!summaryHasContent(summary)) {
+    throw new BackendError(409, "summary-content-required");
+  }
+  return { ...summary, userId: store.userId, synthetic: store.userId === "alex-demo" };
 }
 export async function generateSummaryForProfile(store: ProfileStore) {
   const deterministic = generateSummary(store);
