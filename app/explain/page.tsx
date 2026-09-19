@@ -19,7 +19,7 @@ import { HelpTip } from "@/components/HelpTip";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useSettings } from "@/components/a11y/SettingsProvider";
 import { useT } from "@/components/a11y/useT";
-import { summaryForDisplay } from "@/lib/health/summary";
+import { summaryForDisplay, summaryHasContent } from "@/lib/health/summary";
 import { relativeDays } from "@/lib/dates";
 
 function CalmDetails({
@@ -41,14 +41,14 @@ export default function ExplainPage() {
   const {
     loading,
     events,
-    metrics,
+    summaryAvailable,
     summary: storedSummary,
     saveSummary,
     generateSummary,
     getApprovedSpeech,
   } = useHealthData();
   const summary = summaryForDisplay(storedSummary, events);
-  const hasSummarySourceData = events.length > 0 || metrics.length > 0;
+  const hasVisibleSummaryContent = summary ? summaryHasContent(summary) : false;
   const speech = useSpeaker();
   const { t } = useT();
   const { settings } = useSettings();
@@ -126,7 +126,7 @@ export default function ExplainPage() {
 
       {loading ? (
         <p className="text-muted">{t("explain.loading")}</p>
-      ) : !hasSummarySourceData ? (
+      ) : !summaryAvailable || (summary !== null && !hasVisibleSummaryContent) ? (
         <section className="rounded-2xl border border-line bg-surface p-6">
           <h2 className="text-lg font-semibold text-ink">{t("explain.emptyHeading")}</h2>
           <p className="mt-2 text-base text-muted">{t("explain.emptyBody")}</p>

@@ -48,10 +48,14 @@ These are product requirements, not preferences. Do not relax them.
 ### Empty-profile summary guard (September 19, 2026)
 
 Help Me Explain now shows a clear empty state when the active profile has no
-saved events or daily measurements, even if a stale empty summary exists. The
-UI no longer offers summary generation or approval in that state. The backend
-also rejects both blank-profile generation and summary saves with
-`summary-source-records-required`, so direct requests cannot bypass the guard.
+saved events or daily measurements, or when a generated/stored summary has no
+visible section or patient quote. The UI no longer offers approval in either
+state. The backend rejects blank-profile generation and saves with
+`summary-source-records-required`, and rejects content-empty summaries with
+`summary-content-required`, so direct requests cannot bypass the guard. The
+profile health snapshot exposes `summaryAvailable`, calculated by the same
+deterministic summary builder, so the UI does not offer generation merely
+because unrelated or insufficient database rows exist.
 English and Spanish empty-state copy links the patient to Add health info.
 All nine verification suites, typecheck, and the production build pass.
 

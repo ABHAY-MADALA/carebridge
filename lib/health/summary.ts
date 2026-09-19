@@ -172,6 +172,15 @@ export function buildSummary(
   });
 }
 
+/** Approval is only meaningful when the patient would actually share visible
+ * content. An empty section array (or sections the patient excluded/cleared)
+ * must never produce an approval prompt. */
+export function summaryHasContent(summary: DoctorSummary): boolean {
+  return summary.sections.some(
+    (section) => section.included && section.heading.trim().length > 0 && section.body.trim().length > 0,
+  ) || summary.quotedStatements.some((quote) => quote.text.trim().length > 0);
+}
+
 /** Display-only correction of the exact legacy generated template. No storage
  * migration; patient edits and all other approved sections remain untouched.
  * Anchor to generation time so an old summary never shifts its relative dates. */

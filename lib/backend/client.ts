@@ -45,6 +45,7 @@ export type HealthSnapshotResponse = {
   events: OwnedEvent[];
   metrics: HealthMetric[];
   daily: OwnedDaily[];
+  summaryAvailable: boolean;
   detection: TrendDetection & { userId: ProfileId };
   baseline: BaselineResponse;
 };

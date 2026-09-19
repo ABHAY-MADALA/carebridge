@@ -3,6 +3,7 @@ import { z } from "zod";
 import { HealthEvent, DailyMetric, DoctorSummary, ChatMessage } from "@/lib/schema";
 import { buildEvents, buildMetrics } from "@/lib/store/seed";
 import { dateKey } from "@/lib/dates";
+import { summaryHasContent } from "@/lib/health/summary";
 import { BackendDatabase } from "./database";
 import { ProfileId, OwnedEvent, OwnedDaily, OwnedSummary, HealthMetric, PatientSettings, BackendError, requirePersonal } from "./schema";
 
@@ -101,6 +102,7 @@ export class ProfileStore {
     }
     this.owned(input);
     const summary = OwnedSummary.parse(this.stamp({ ...DoctorSummary.parse(input), approved, approvedAt: approved ? new Date().toISOString() : null }));
+    if (!summaryHasContent(summary)) throw new BackendError(409, "summary-content-required");
     this.put("summary", "current", summary); return summary;
   }
   settings() { return PatientSettings.parse(this.get("settings", "current") ? this.stripOwner(this.get("settings", "current")) : {}); }
