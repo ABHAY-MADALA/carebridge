@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { BrandMark } from "./BrandMark";
 import { AccessibilityPanel } from "@/components/a11y/AccessibilityPanel";
 import { useT } from "@/components/a11y/useT";
+import { DemoIndicator, ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 
 const LINKS = [
   { href: "/", key: "home", icon: Home },
@@ -70,16 +71,9 @@ export function Sidebar() {
         <div className="mt-2"><AccessibilityPanel trigger={(open) => <button type="button" onClick={open} className="flex w-full min-h-[46px] items-center gap-3 rounded-lg px-2.5 text-sm text-muted hover:bg-raised hover:text-ink"><Settings size={18} aria-hidden />{lang === "es" ? "Ajustes" : "Settings"}</button>} /></div>
       </nav>
 
-      <div className="mt-3 flex items-center gap-2.5 border-t border-line px-2 pt-3">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-semibold text-brand">
-          A
-        </span>
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold text-ink">Alex</span>
-          <span className="block truncate text-xs text-muted">
-            {t("nav.demoPatient")}
-          </span>
-        </span>
+      <div className="mt-3 border-t border-line pt-3">
+        <DemoIndicator className="mb-2 ml-2" />
+        <ProfileSwitcher />
       </div>
     </aside>
   );

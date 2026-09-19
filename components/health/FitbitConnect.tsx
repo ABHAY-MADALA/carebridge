@@ -1,120 +1,232 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Watch, RefreshCw, Unlink } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { FlaskConical, RefreshCw, Unlink, Watch } from "lucide-react";
 import { useHealthData } from "@/components/health/useHealthData";
-import { useT } from "@/components/a11y/useT";
-import { fitbitSource, type HealthSourceStatus } from "@/lib/health/sources";
-import { syncFitbit } from "@/lib/health/fitbitSync";
-import { formatDayHeading, dateKeyOf } from "@/lib/dates";
+import { useProfile } from "@/components/profile/ProfileProvider";
+import {
+  BackendClientError,
+  type FitbitStatus,
+  type FitbitSyncResult,
+} from "@/lib/backend/client";
 
-type Phase = "loading" | "setup-required" | "disconnected" | "connected";
+type Phase =
+  | "loading"
+  | "demo"
+  | "setup-required"
+  | "disconnected"
+  | "connected";
 
-/*
-  Five real states, never a faked one: loading, Setup required (env vars
-  absent), Disconnected, Connected (only once OAuth succeeded AND a real
-  metric came back), and — layered on top of Connected — a transient
-  sync-failed banner or a revert to Disconnected on reauth-required. There is
-  no "Connected" state this component can reach without a genuine successful
-  sync; a failed or empty sync leaves it in Disconnected/error, not a
-  simulated success.
-*/
+const MEASUREMENT_LABELS = {
+  sleepMinutes: "Sleep",
+  restingHeartRate: "Resting heart rate",
+  steps: "Steps and activity",
+} as const;
+
 export function FitbitConnect() {
-  const { metrics } = useHealthData();
-  const { t } = useT();
+  const { profile, context, request } = useProfile();
+  const { healthMetrics, refresh } = useHealthData();
   const [phase, setPhase] = useState<Phase>("loading");
+  const [status, setStatus] = useState<FitbitStatus | null>(null);
   const [syncing, setSyncing] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const lastFitbitMetric = metrics
-    .filter((m) => m.source === "fitbit")
-    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  const availableTypes = [...new Set(healthMetrics.map((metric) => metric.type))];
 
-  const refreshStatus = async () => {
-    const status: HealthSourceStatus = await fitbitSource.status();
-    setPhase(!status.configured ? "setup-required" : status.connected ? "connected" : "disconnected");
-    return status;
+  const refreshStatus = useCallback(async () => {
+    const next = await request<FitbitStatus>("fitbit/status");
+    setStatus(next);
+    setPhase(
+      !next.allowed
+        ? "demo"
+        : !next.configured
+          ? "setup-required"
+          : next.connected
+            ? "connected"
+            : "disconnected",
+    );
+    return next;
+  }, [request]);
+
+  useEffect(() => {
+    setPhase("loading");
+    setMessage(null);
+    setError(null);
+    void refreshStatus()
+      .then((next) => {
+        const query = new URLSearchParams(window.location.search);
+        const result = query.get("fitbit");
+        const reason = query.get("reason");
+        if (result) {
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+        if (result === "connected" && next.connected) {
+          setMessage("Fitbit authorization succeeded. Sync to import your real measurements.");
+        } else if (result === "error") {
+          setError(
+            reason
+              ? `Fitbit authorization did not finish (${reason}).`
+              : "Fitbit authorization did not finish.",
+          );
+        }
+      })
+      .catch(() => {
+        setError("Fitbit status could not be checked.");
+        setPhase(profile.synthetic ? "demo" : "disconnected");
+      });
+  }, [context, profile.synthetic, refreshStatus]);
+
+  const connect = async () => {
+    setError(null);
+    const result = await request<{ authorizationUrl: string }>("fitbit/start", {
+      method: "POST",
+      body: {},
+    });
+    window.location.assign(result.authorizationUrl);
   };
 
   const runSync = async () => {
     setSyncing(true);
-    setSyncError(null);
-    const result = await syncFitbit();
-    setSyncing(false);
-    if (result.ok) {
-      setPhase("connected");
-      return;
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await request<FitbitSyncResult>("fitbit/sync", {
+        method: "POST",
+        body: {},
+      });
+      await Promise.all([refresh(), refreshStatus()]);
+      if (result.ok) {
+        setMessage(
+          `Synced ${result.metricsCount} real measurement${
+            result.metricsCount === 1 ? "" : "s"
+          }.`,
+        );
+      } else {
+        setMessage("Fitbit is connected, but no supported measurements were available.");
+      }
+      if (result.unavailable.length) {
+        setError(`Unavailable in this sync: ${result.unavailable.join(", ")}.`);
+      }
+    } catch (cause) {
+      if (
+        cause instanceof BackendClientError &&
+        cause.code === "reauth-required"
+      ) {
+        setPhase("disconnected");
+        setError("Fitbit authorization expired. Connect again to continue syncing.");
+      } else {
+        setError(
+          cause instanceof BackendClientError
+            ? `Sync failed (${cause.code}).`
+            : "Sync failed. Your existing measurements were not changed.",
+        );
+      }
+    } finally {
+      setSyncing(false);
     }
-    if (result.reason === "reauth-required") {
-      setPhase("disconnected");
-      setSyncError(t("home.fitbitReauth"));
-      return;
-    }
-    // "connected, but the last sync didn't go through" — tokens are kept,
-    // this is presented as transient, not a disconnect.
-    setSyncError(t("home.fitbitSyncFailed"));
   };
 
-  useEffect(() => {
-    (async () => {
-      const status = await refreshStatus();
-      const query = new URLSearchParams(window.location.search);
-      const fitbitParam = query.get("fitbit");
-      if (fitbitParam) {
-        window.history.replaceState(null, "", window.location.pathname);
-      }
-      if (fitbitParam === "connected" && status.connected) {
-        await runSync();
-      } else if (fitbitParam === "error") {
-        setSyncError(t("home.fitbitConnectError"));
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const disconnect = async () => {
-    await fitbitSource.disconnect();
-    setPhase("disconnected");
-    setSyncError(null);
+    setError(null);
+    await request("fitbit/disconnect", {
+      method: "POST",
+      body: { confirmed: true },
+    });
+    await refreshStatus();
+    setMessage(
+      "Fitbit disconnected. Measurements already imported into your Personal history were preserved.",
+    );
   };
 
   return (
     <section className="card p-5" aria-labelledby="fitbit-heading">
       <div className="flex items-center gap-2">
-        <Watch className="h-5 w-5" aria-hidden />
+        {phase === "demo" ? (
+          <FlaskConical className="h-5 w-5" aria-hidden />
+        ) : (
+          <Watch className="h-5 w-5" aria-hidden />
+        )}
         <h2 id="fitbit-heading" className="text-xl font-bold">
-          {t("home.fitbitHeading")}
+          {phase === "demo" ? "Demo wearable data" : "Fitbit"}
         </h2>
       </div>
 
-      {phase === "loading" && <p className="mt-2 text-base text-muted">{t("home.fitbitChecking")}</p>}
+      {phase === "loading" && (
+        <p className="mt-2 text-base text-muted">Checking the active profile…</p>
+      )}
+
+      {phase === "demo" && (
+        <>
+          <p className="mt-2 text-base text-muted">
+            Alex never connects to Fitbit. Every wearable-style measurement in this
+            profile is synthetic and stays available without internet access.
+          </p>
+          <p className="mt-3 inline-flex rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold">
+            Demo · Synthetic data
+          </p>
+        </>
+      )}
 
       {phase === "setup-required" && (
-        <p className="mt-2 text-base text-muted">{t("home.fitbitSetupRequired")}</p>
+        <>
+          <p className="mt-2 text-base text-muted">
+            Real Fitbit authorization is not configured on this computer yet.
+          </p>
+          <p className="mt-2 text-sm text-muted">
+            Add the Google Health client ID, client secret and the exact backend callback
+            URI to <code>.env.local</code>. CareBridge will not pretend to connect.
+          </p>
+        </>
       )}
 
       {phase === "disconnected" && (
         <>
-          <p className="mt-2 text-base text-muted">{t("home.fitbitDisconnectedBody")}</p>
-          {syncError && <p className="mt-2 text-sm text-danger">{syncError}</p>}
-          <button type="button" className="btn btn-md btn-primary mt-4" onClick={() => fitbitSource.connect()}>
+          <p className="mt-2 text-base text-muted">
+            Connect your real account to import supported sleep, steps and resting-heart-
+            rate measurements into Abhay&apos;s Personal profile only.
+          </p>
+          <button
+            type="button"
+            className="btn btn-md btn-primary mt-4"
+            onClick={() => void connect()}
+          >
             <Watch className="h-5 w-5" aria-hidden />
-            {t("home.fitbitConnect")}
+            Connect Fitbit
           </button>
         </>
       )}
 
       {phase === "connected" && (
         <>
-          <p className="mt-2 text-base text-muted">{t("home.fitbitConnectedBanner")}</p>
+          <p className="mt-2 font-semibold text-good">Connected</p>
           <p className="mt-1 text-sm text-muted">
-            {lastFitbitMetric
-              ? t("home.fitbitLastSynced", {
-                  when: formatDayHeading(dateKeyOf(new Date(lastFitbitMetric.date).toISOString())),
-                })
-              : t("home.fitbitConnected")}
+            Last synced:{" "}
+            {status?.lastSyncAt
+              ? new Date(status.lastSyncAt).toLocaleString()
+              : "Not synced yet"}
           </p>
-          {syncError && <p className="mt-2 text-sm text-danger">{syncError}</p>}
+
+          <div className="mt-4">
+            <p className="label">Available real measurements</p>
+            {availableTypes.length ? (
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {availableTypes.map((type) => (
+                  <li
+                    key={type}
+                    className="rounded-full bg-brand-soft px-3 py-1 text-sm font-medium"
+                  >
+                    {MEASUREMENT_LABELS[type]}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-sm text-muted">
+                No measurements imported yet. Missing measurements will stay missing.
+              </p>
+            )}
+          </div>
+
           <div className="mt-4 flex flex-wrap gap-3">
             <button
               type="button"
@@ -122,15 +234,34 @@ export function FitbitConnect() {
               onClick={() => void runSync()}
               disabled={syncing}
             >
-              <RefreshCw className="h-4 w-4" aria-hidden />
-              {syncing ? t("home.fitbitSyncing") : t("home.fitbitSyncNow")}
+              <RefreshCw
+                className={syncing ? "h-4 w-4 animate-spin" : "h-4 w-4"}
+                aria-hidden
+              />
+              {syncing ? "Syncing…" : "Sync now"}
             </button>
-            <button type="button" className="btn btn-md btn-ghost" onClick={() => void disconnect()}>
+            <button
+              type="button"
+              className="btn btn-md btn-ghost"
+              onClick={() => void disconnect()}
+              disabled={syncing}
+            >
               <Unlink className="h-4 w-4" aria-hidden />
-              {t("home.fitbitDisconnect")}
+              Disconnect
             </button>
           </div>
         </>
+      )}
+
+      {message && (
+        <p role="status" className="mt-3 rounded-xl bg-brand-soft p-3 text-sm">
+          {message}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="mt-3 rounded-xl bg-warn-soft p-3 text-sm text-danger">
+          {error}
+        </p>
       )}
     </section>
   );

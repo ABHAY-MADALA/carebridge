@@ -89,11 +89,11 @@ export const DailyMetric = z.object({
   /**
    * Where the wearable fields (sleep/heart rate/steps) came from. "demo" is
    * Alex's seeded history; "fitbit" is real data synced from the Fitbit
-   * account via the Google Health API. Defaulted so rows written before this
-   * field existed still parse. Patient-reported fields (painLevel,
-   * fatigueLevel) are never sourced from Fitbit regardless of this value.
+   * account via the Google Health API; "patient" is a backend aggregate derived
+   * exclusively from that profile's confirmed pain/fatigue events. Defaulted
+   * so rows written before this field existed still parse.
    */
-  source: z.enum(["demo", "fitbit"]).default("demo"),
+  source: z.enum(["demo", "fitbit", "patient"]).default("demo"),
 });
 export type DailyMetric = z.infer<typeof DailyMetric>;
 

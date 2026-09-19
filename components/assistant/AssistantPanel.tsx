@@ -13,6 +13,11 @@ import { ConfirmationCard } from "./ConfirmationCard";
 import { BodyPicker } from "@/components/body/BodyPicker";
 import { SeverityScale } from "@/components/manual/SeverityScale";
 import { cn } from "@/lib/utils";
+import { useProfile } from "@/components/profile/ProfileProvider";
+import {
+  BackendClientError,
+  type BackendAssistantTurn,
+} from "@/lib/backend/client";
 
 /*
   The AI Health Assistant — the centre of CareBridge, not a chat bubble in a
@@ -31,6 +36,7 @@ export function AssistantPanel({
   initialMessage?: { text: string; autoSend: boolean; startVoice?: boolean } | null;
 } = {}) {
   const { saveDrafts } = useHealthData();
+  const { request } = useProfile();
   const { settings } = useSettings();
   const { t, tRaw } = useT();
   const speech = useSpeaker();
@@ -46,6 +52,7 @@ export function AssistantPanel({
 
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const conversationIdRef = useRef<string | undefined>(undefined);
 
   const showConfirmation = turn?.action === "propose" && turn.drafts.length > 0 && !savedCount;
 
@@ -66,12 +73,14 @@ export function AssistantPanel({
       setBusy(true);
 
       try {
-        const res = await fetch("/api/assistant", {
+        const data = await request<BackendAssistantTurn>("assistant", {
           method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ messages: next }),
+          body: {
+            text: trimmed,
+            conversationId: conversationIdRef.current,
+          },
         });
-        const data = (await res.json()) as AssistantTurn;
+        conversationIdRef.current = data.conversationId;
 
         /*
           Translation is fetched for the record, never to replace what was said.
@@ -109,7 +118,13 @@ export function AssistantPanel({
             void speech.speak(assistantText, { lang: resolved.detectedLanguage });
           }
         }
-      } catch {
+      } catch (cause) {
+        if (
+          cause instanceof BackendClientError &&
+          cause.code === "conversation-full-start-new"
+        ) {
+          conversationIdRef.current = undefined;
+        }
         setMessages((m) => [
           ...m,
           {
@@ -121,7 +136,7 @@ export function AssistantPanel({
         setBusy(false);
       }
     },
-    [busy, messages, settings.readAloud, speech, t],
+    [busy, messages, request, settings.readAloud, speech, t],
   );
 
   const voice = useVoiceInput({

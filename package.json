@@ -8,9 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "verify": "tsx scripts/verify-engine.ts && tsx scripts/verify-fallback.ts && tsx scripts/verify-guards.ts && tsx scripts/verify-advocate.ts && tsx scripts/verify-ui-fixes.ts",
+    "verify": "tsx scripts/verify-engine.ts && tsx scripts/verify-fallback.ts && tsx scripts/verify-guards.ts && tsx scripts/verify-advocate.ts && tsx scripts/verify-ui-fixes.ts && tsx scripts/verify-profile-backend.ts && tsx scripts/verify-profile-api.ts && tsx scripts/verify-profile-frontend.ts",
     "check-voice": "tsx scripts/check-voice.ts",
-    "rehearse": "tsx scripts/rehearse.ts"
+    "rehearse": "tsx scripts/rehearse.ts",
+    "rehearse:profiles": "tsx scripts/rehearse-profiles.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

@@ -14,11 +14,14 @@ not the product's identity.
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
+npm run dev -- --hostname 127.0.0.1   # open http://localhost:3000
 ```
 
-Alex, a demo patient with three cycles of history, is seeded automatically on
-first load.
+CareBridge is local-only and uses a SQLite backend in `.carebridge-data`.
+**Abhay — Personal** starts empty. **Alex — Demo Patient** receives the
+deterministic 84-day, three-cycle synthetic history on the first Alex health
+read. Every health query and write is bound to the active server session/profile;
+the switcher does not filter a shared browser array.
 
 **No API keys are required.** Every AI path has a deterministic fallback, and the
 entire demo below works with no keys, no internet, and no account. Keys make it
@@ -34,9 +37,30 @@ npm run check-voice                # what is configured, and ElevenLabs quota
 | `npm run dev` | Development server |
 | `npm run build` | Production build |
 | `npm run typecheck` | TypeScript, no emit |
-| `npm run verify` | Engine, parser, safety-guard and advocate checks |
+| `npm run verify` | Domain checks plus backend/API/frontend profile-isolation suites |
 | `npm run check-voice` | Which services are live, plus remaining ElevenLabs quota |
 | `npm run rehearse` | Walks the whole demo script against a running dev server |
+| `npm run rehearse:profiles` | Destructive profile rehearsal; requires a disposable non-3000 server/database |
+
+### Real Fitbit for Personal
+
+Register this exact callback in the Google Cloud OAuth client:
+
+```text
+http://localhost:3000/api/backend/fitbit/callback
+```
+
+Then set these **server-only** values in `.env.local`:
+
+```dotenv
+GOOGLE_HEALTH_CLIENT_ID=
+GOOGLE_HEALTH_CLIENT_SECRET=
+CAREBRIDGE_FITBIT_REDIRECT_URI=http://localhost:3000/api/backend/fitbit/callback
+```
+
+Fitbit is only allowed for Personal. Alex always shows **Demo · Synthetic
+data** and never presents a simulated connection. A missing Fitbit measurement
+stays missing.
 
 ---
 
@@ -53,8 +77,20 @@ part.
 > language that isn't the clinic's, and nobody remembers three months of
 > symptoms in a five-minute appointment."
 
-**0:10 — Open CareBridge.** Land on the home page. Point at **Tell CareBridge**
-filling the screen.
+**0:10 — Open CareBridge.** Start on **Abhay — Personal**. Open **My Health** and,
+if real OAuth has been completed, show the actual connected status, last sync
+timestamp and measurements.
+
+> "CareBridge can ingest real wearable information and build a personal health
+> history. This profile starts empty and only uses my own records."
+
+Use the profile switcher and choose **Alex — Demo Patient**. Point out the
+persistent **Demo · Synthetic data** badge.
+
+> "For the demonstration we're switching to a synthetic patient so the scenario
+> is reproducible. These profiles are separated in the backend."
+
+Return to the home page. Point at **Tell CareBridge** filling the screen.
 
 > "This is the whole interface. You don't have to know where anything belongs."
 

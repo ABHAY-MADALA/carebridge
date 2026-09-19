@@ -22,6 +22,7 @@ import { BrandMark } from "./BrandMark";
 import { AccessibilityPanel } from "@/components/a11y/AccessibilityPanel";
 import { useT } from "@/components/a11y/useT";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { DemoIndicator, ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 
 const BOTTOM_LINKS = [
   { href: "/", key: "home", icon: Home },
@@ -68,7 +69,10 @@ export function MobileNav() {
           <BrandMark className="h-6 w-6" />
           <span className="text-base font-semibold text-ink">CareBridge</span>
         </Link>
-        <div className="flex items-center gap-1"><ThemeToggle /><AccessibilityPanel placement="below"
+        <div className="flex items-center gap-1">
+          <DemoIndicator className="hidden min-[390px]:inline-flex" />
+          <ProfileSwitcher compact placement="below" />
+          <ThemeToggle /><AccessibilityPanel placement="below"
           trigger={(open) => (
             <button
               type="button"

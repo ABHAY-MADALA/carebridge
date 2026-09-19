@@ -4,8 +4,6 @@ import { useState } from "react";
 import { Check, Plus, X, Activity, Thermometer, BatteryLow, Pill, Moon, CalendarDays, Utensils, Smile, FileText, Stethoscope } from "lucide-react";
 import type { Category, DraftEvent } from "@/lib/schema";
 import { painLabelFor } from "@/lib/health/categories";
-import { draftToEvent } from "@/lib/health/createEvent";
-import { repository } from "@/lib/store";
 import { useHealthData } from "@/components/health/useHealthData";
 import { useSettings } from "@/components/a11y/SettingsProvider";
 import { useT } from "@/components/a11y/useT";
@@ -83,7 +81,7 @@ export function ManualEntry({
   startOpen?: boolean;
   pageContext?: boolean;
 } = {}) {
-  const { metrics } = useHealthData();
+  const { saveDrafts } = useHealthData();
   const { settings } = useSettings();
   const { t, lang } = useT();
   const wizardMode = forceWizard || settings.lowStimulation;
@@ -132,7 +130,7 @@ export function ManualEntry({
       cyclePhase: null,
     };
 
-    await repository.addEvent(draftToEvent(draft, location ? "visual" : "form", metrics));
+    await saveDrafts([draft], location ? "visual" : "form");
     setSaved(true);
     setTimeout(() => setSaved(false), 4000);
     close();

@@ -10,8 +10,9 @@ import { QuickPhrases } from "@/components/clinician/QuickPhrases";
 import { DoctorSpeaks } from "@/components/clinician/DoctorSpeaks";
 import { HealthMetric } from "@/components/ui/HealthMetric";
 import { useT } from "@/components/a11y/useT";
+import { useProfile } from "@/components/profile/ProfileProvider";
 import { METRICS } from "@/lib/health/metrics";
-import { summaryToText, summaryForDisplay } from "@/lib/health/summary";
+import { summaryForDisplay } from "@/lib/health/summary";
 import { relativeDays } from "@/lib/dates";
 
 /*
@@ -26,18 +27,32 @@ import { relativeDays } from "@/lib/dates";
 */
 
 export default function ClinicianPage() {
-  const { loading, summary: storedSummary, detection, events } = useHealthData();
+  const {
+    loading,
+    summary: storedSummary,
+    detection,
+    events,
+    getApprovedSpeech,
+  } = useHealthData();
+  const { profile } = useProfile();
   const summary = summaryForDisplay(storedSummary, events);
   const speech = useSpeaker();
   const { t } = useT();
 
   const included = summary?.sections.filter((s) => s.included) ?? [];
-  const fullText = summary ? summaryToText(summary, { intro: true }) : "";
 
   // Ready the audio on arrival so the first press plays immediately.
   useEffect(() => {
-    if (summary?.approved && fullText) speech.prewarm(fullText, "patient");
-  }, [summary?.approved, fullText, speech]);
+    let cancelled = false;
+    if (summary?.approved) {
+      void getApprovedSpeech().then((text) => {
+        if (!cancelled) speech.prewarm(text, "patient");
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [getApprovedSpeech, summary?.approved, speech]);
 
   if (loading) {
     return <p className="text-muted">{t("clinician.loading")}</p>;
@@ -63,7 +78,9 @@ export default function ClinicianPage() {
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-[1.75rem]">
           {t("nav.clinician")}
         </h1>
-        <p className="mt-1 text-muted">{t("clinician.header")}</p>
+        <p className="mt-1 text-muted">
+          {profile.name} — {profile.synthetic ? "Demo Patient" : "Personal"}
+        </p>
         <p className="mt-1 text-sm text-muted">
           {t("clinician.approvedLine", { when: relativeDays(summary.approvedAt ?? summary.generatedAt) })}
         </p>
@@ -89,7 +106,11 @@ export default function ClinicianPage() {
         <button
           type="button"
           className="btn btn-lg btn-primary"
-          onClick={() => (speech.speaking ? speech.stop() : void speech.speak(fullText))}
+          onClick={() =>
+            speech.speaking
+              ? speech.stop()
+              : void getApprovedSpeech().then((text) => speech.speak(text))
+          }
         >
           <Volume2 className="h-5 w-5" aria-hidden />
           {t("clinician.readOutLoud")}
@@ -122,7 +143,9 @@ export default function ClinicianPage() {
                 <button
                   type="button"
                   className="btn btn-sm btn-ghost !min-h-[2.25rem]"
-                  onClick={() => void speech.speak(`${s.heading}. ${s.body.replace(/^- /gm, "")}`)}
+                  onClick={() =>
+                    void getApprovedSpeech(s.id).then((text) => speech.speak(text))
+                  }
                 >
                   <Volume2 className="h-3.5 w-3.5" aria-hidden />
                   {t("clinician.readThisPart")}

@@ -12,6 +12,7 @@ import { TimelineEntry } from "@/components/ui/TimelineEntry";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { dateKeyOf, formatDayHeading, formatTime } from "@/lib/dates";
 import { METRICS } from "@/lib/health/metrics";
+import type { TimelineEntry as BackendTimelineEntry } from "@/lib/backend/client";
 
 /*
   The timeline turns isolated notes into a longitudinal story. It is the thing
@@ -33,7 +34,7 @@ function formatDuration(mins: number) {
   return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 }
 
-function EventRow({ event, onDelete, last }: { event: HealthEvent; onDelete: (id: string) => Promise<void>; last: boolean }) {
+function EventRow({ event, sourceLabel, onDelete, last }: { event: HealthEvent; sourceLabel: string; onDelete: (id: string) => Promise<void>; last: boolean }) {
   const { t, tRaw } = useT();
   const severityWords = tRaw<string[]>("severityScale.words");
   const MethodIcon = METHOD_ICON[event.inputMethod];
@@ -70,7 +71,7 @@ function EventRow({ event, onDelete, last }: { event: HealthEvent; onDelete: (id
       source={
         <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
           <MethodIcon className="h-3.5 w-3.5" aria-hidden />
-          {methodLabel}
+          {sourceLabel} &middot; {methodLabel}
           {event.cyclePhase && (
             <span>&middot; {t("timeline.phaseSuffix", { phase: t(`insights.phase.${event.cyclePhase}`) })}</span>
           )}
@@ -83,20 +84,51 @@ function EventRow({ event, onDelete, last }: { event: HealthEvent; onDelete: (id
   );
 }
 
+function DailyRow({
+  entry,
+  last,
+}: {
+  entry: Extract<BackendTimelineEntry, { kind: "daily" }>;
+  last: boolean;
+}) {
+  const daily = entry.daily;
+  const values = [
+    daily.sleepMinutes !== null
+      ? `Sleep ${METRICS.sleepMinutes.format(daily.sleepMinutes)}`
+      : null,
+    daily.steps !== null ? METRICS.steps.format(daily.steps) : null,
+    daily.restingHeartRate !== null
+      ? `Resting heart rate ${METRICS.restingHeartRate.format(
+          daily.restingHeartRate,
+        )}`
+      : null,
+  ].filter(Boolean);
+  return (
+    <TimelineEntry
+      last={last}
+      time="Daily"
+      title="Wearable measurements"
+      meta={<p className="mt-1 text-sm text-muted">{values.join(" · ")}</p>}
+      source={
+        <SourceBadge source={daily.source === "demo" ? "demo" : "fitbit"} />
+      }
+    />
+  );
+}
+
 export default function TimelinePage() {
-  const { loading, events, metrics, deleteEvent } = useHealthData();
+  const { loading, timeline, deleteEvent } = useHealthData();
   const { t } = useT();
 
   const days = useMemo(() => {
-    const byDay = new Map<string, HealthEvent[]>();
-    for (const e of events) {
-      const key = dateKeyOf(e.occurredAt);
-      byDay.set(key, [...(byDay.get(key) ?? []), e]);
+    const byDay = new Map<string, BackendTimelineEntry[]>();
+    for (const entry of timeline) {
+      const key =
+        entry.kind === "daily" ? entry.daily.date : dateKeyOf(entry.event.occurredAt);
+      byDay.set(key, [...(byDay.get(key) ?? []), entry]);
     }
     return [...byDay.entries()].sort((a, b) => b[0].localeCompare(a[0]));
-  }, [events]);
-
-  const metricByDate = useMemo(() => new Map(metrics.map((m) => [m.date, m])), [metrics]);
+  }, [timeline]);
 
   return (
     <div>
@@ -112,29 +144,33 @@ export default function TimelinePage() {
         <p className="text-lg text-muted">{t("timeline.empty")}</p>
       ) : (
         <div className="space-y-10">
-          {days.map(([day, dayEvents]) => {
-            const m = metricByDate.get(day);
+          {days.map(([day, dayEntries]) => {
             return (
               <section key={day} aria-labelledby={`day-${day}`}>
                 <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <h2 id={`day-${day}`} className="text-sm font-semibold uppercase tracking-wide text-muted">
                     {formatDayHeading(day)}
                   </h2>
-                  {m && (m.sleepMinutes !== null || m.steps !== null || m.restingHeartRate !== null) && (
-                    <p className="flex items-center gap-1.5 text-sm text-muted">
-                      {m.sleepMinutes !== null && `${METRICS.sleepMinutes.format(m.sleepMinutes)} ${t("timeline.sleepSuffix")}`}
-                      {m.steps !== null && ` · ${METRICS.steps.format(m.steps)}`}
-                      {m.restingHeartRate !== null &&
-                        ` · ${METRICS.restingHeartRate.format(m.restingHeartRate)} ${t("timeline.restingSuffix")}`}
-                      <SourceBadge source={m.source} />
-                    </p>
-                  )}
                 </div>
 
                 <ul>
-                  {dayEvents.map((e, i) => (
-                    <EventRow key={e.id} event={e} onDelete={deleteEvent} last={i === dayEvents.length - 1} />
-                  ))}
+                  {dayEntries.map((entry, i) =>
+                    entry.kind === "event" ? (
+                      <EventRow
+                        key={`event-${entry.event.id}`}
+                        event={entry.event}
+                        sourceLabel={entry.source}
+                        onDelete={deleteEvent}
+                        last={i === dayEntries.length - 1}
+                      />
+                    ) : (
+                      <DailyRow
+                        key={`daily-${entry.daily.date}`}
+                        entry={entry}
+                        last={i === dayEntries.length - 1}
+                      />
+                    ),
+                  )}
                 </ul>
               </section>
             );

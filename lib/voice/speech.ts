@@ -17,6 +17,7 @@ export type Engine = "elevenlabs" | "browser" | "none";
 
 const cache = new Map<string, string>();
 const inFlight = new Map<string, Promise<string | null>>();
+let cacheRevision = 0;
 
 /** Set once per session from /api/voice-status, so we don't retry a missing key. */
 let elevenLabsAvailable: boolean | null = null;
@@ -38,6 +39,7 @@ function cacheKey(text: string, speaker: Speaker) {
 }
 
 async function fetchAudioUrl(text: string, speaker: Speaker): Promise<string | null> {
+  const revision = cacheRevision;
   const key = cacheKey(text, speaker);
   const cached = cache.get(key);
   if (cached) return cached;
@@ -71,6 +73,10 @@ async function fetchAudioUrl(text: string, speaker: Speaker): Promise<string | n
       }
 
       const url = URL.createObjectURL(blob);
+      if (revision !== cacheRevision) {
+        URL.revokeObjectURL(url);
+        return null;
+      }
       cache.set(key, url);
       elevenLabsAvailable = true;
       return url;
@@ -114,6 +120,20 @@ export function stopSpeaking() {
   const cb = onStopCallback;
   onStopCallback = null;
   cb?.();
+}
+
+/**
+ * Profile switches are a hard privacy boundary. Revoke every cached blob URL
+ * and forget in-flight/preflight state so audio generated for one profile can
+ * never be replayed after another profile becomes active.
+ */
+export function clearSpeechCache() {
+  stopSpeaking();
+  cacheRevision += 1;
+  for (const url of cache.values()) URL.revokeObjectURL(url);
+  cache.clear();
+  inFlight.clear();
+  elevenLabsAvailable = null;
 }
 
 export type SpeakOptions = {

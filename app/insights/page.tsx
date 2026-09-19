@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Hourglass } from "lucide-react";
 import { useHealthData } from "@/components/health/useHealthData";
 import { ChangeBanner } from "@/components/insights/ChangeBanner";
 import { WhyAmISeeingThis } from "@/components/insights/WhyAmISeeingThis";
@@ -17,7 +17,7 @@ import { METRICS, METRIC_ORDER } from "@/lib/health/metrics";
 import { baselineByPhase } from "@/lib/health/baseline";
 
 export default function InsightsPage() {
-  const { loading, metrics, detection, baseline } = useHealthData();
+  const { loading, metrics, detection, baseline, baselineInfo } = useHealthData();
   const { t, lang } = useT();
   const { settings } = useSettings();
 
@@ -46,7 +46,24 @@ export default function InsightsPage() {
         <p className="text-muted">{t("insights.working")}</p>
       ) : (
         <div className="space-y-10">
-          {detection?.triggered ? (
+          {baselineInfo?.status === "building" ? (
+            <section className="flex flex-wrap items-start gap-3 rounded-2xl border border-line bg-surface p-5">
+              <Hourglass className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />
+              <div>
+                <h2 className="text-lg font-semibold text-ink">
+                  Building your baseline
+                </h2>
+                <p className="mt-0.5 text-sm text-muted">
+                  {baselineInfo.explanation ??
+                    "Keep recording your information. CareBridge will compare you only with your own history once there is enough data."}
+                </p>
+                <p className="mt-2 text-xs text-muted">
+                  Alex&apos;s demo history and population averages are never used to fill
+                  the gaps.
+                </p>
+              </div>
+            </section>
+          ) : detection?.triggered ? (
             <ChangeBanner detection={detection} showLink={false} />
           ) : (
             <section className="flex flex-wrap items-start gap-3 rounded-2xl border border-good/30 bg-brand-soft/40 p-5">

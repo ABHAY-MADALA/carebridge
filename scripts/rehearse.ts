@@ -1,156 +1,129 @@
 /*
-  Walks the demo script end to end against a running dev server, so a
-  regression in the demo path is caught before a judge finds it.
-
-  Start the server first, then: npx tsx scripts/rehearse.ts
+  Walks the profile-aware demo against a running local CareBridge server.
+  It writes only to Alex, resets Alex at the end, and proves Personal is
+  byte-for-byte unchanged after switching back.
 */
-import { buildEvents, buildMetrics } from "../lib/store/seed";
-import { detectTrend } from "../lib/health/trends";
-import { buildSummary, summaryToText } from "../lib/health/summary";
-import { METRICS } from "../lib/health/metrics";
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 
-const BASE = process.env.BASE_URL ?? "http://localhost:3000";
+const BASE = new URL(process.env.BASE_URL ?? "http://localhost:3000");
 
 async function main() {
+  assert.ok(
+    ["localhost", "127.0.0.1"].includes(BASE.hostname),
+    "CareBridge profile rehearsal is local-only",
+  );
 
-let failures = 0;
-const check = (ok: boolean, label: string, detail = "") => {
-  console.log(`  ${ok ? "PASS" : "FAIL"}  ${label}${!ok && detail ? `  <- ${detail}` : ""}`);
-  if (!ok) failures++;
-};
-
-async function post<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return (await res.json()) as T;
-}
-
-type Turn = {
-  action: string;
-  question: string | null;
-  drafts: { label: string; severity: number | null; bodyLocation: string | null; onset: string | null }[];
-  detectedLanguage: string;
-  source: string;
-};
-
-const status = await fetch(`${BASE}/api/voice-status`).then((r) => r.json());
-console.log(
-  `\nServer: ${BASE}   LLM: ${status.llm ? status.llmProvider : "none (fallback)"}   ElevenLabs: ${
-    status.elevenlabs ? "live" : "none (browser voice)"
-  }\n`,
-);
-
-// ---------------------------------------------------------------------------
-console.log("0:20  Patient speaks to the assistant");
-const first = "My lower stomach has been hurting a lot today.";
-const t1 = await post<Turn>("/api/assistant", { messages: [{ role: "user", content: first }] });
-console.log(`  patient:   "${first}"`);
-console.log(`  assistant: "${t1.question}"`);
-check(t1.action === "ask", "asks a follow-up rather than guessing");
-check(t1.drafts[0]?.severity === null, "did not invent a severity from 'a lot'");
-
-console.log("\n0:30  Patient answers");
-const t2 = await post<Turn>("/api/assistant", {
-  messages: [
-    { role: "user", content: first },
-    { role: "assistant", content: t1.question ?? "" },
-    { role: "user", content: "About seven." },
-  ],
-});
-console.log(`  patient: "About seven."`);
-console.log(
-  `  understood: ${t2.drafts[0]?.label} ${t2.drafts[0]?.severity}/10, ${t2.drafts[0]?.bodyLocation}, started ${t2.drafts[0]?.onset}`,
-);
-check(t2.action === "propose", "proposes for confirmation", t2.question ?? "");
-check(t2.drafts[0]?.severity === 7, "severity is 7");
-check(t2.drafts[0]?.bodyLocation === "Lower abdomen", "location survived the follow-up");
-
-// ---------------------------------------------------------------------------
-console.log("\n1:05  The change banner");
-const metrics = buildMetrics();
-const events = buildEvents();
-const detection = detectTrend(metrics);
-check(detection.triggered, `${detection.signals.length} signals move together`);
-for (const s of detection.signals) {
-  const m = METRICS[s.metric];
-  console.log(`  ${m.label}: ${m.format(s.baselineValue)} -> ${m.format(s.currentValue)}`);
-}
-
-console.log("\n1:35  The cycle-aware baseline");
-check(
-  detection.signals.every((s) => s.baselineSource === "cycle-phase"),
-  `compared against the same ${detection.phase} phase, not a flat average`,
-);
-
-// ---------------------------------------------------------------------------
-console.log("\n1:55  Help Me Explain");
-const base = buildSummary(events, metrics, detection);
-const polished = await post<typeof base>("/api/summary", { summary: base });
-check(polished.sections.length === base.sections.length, "summary survived the rewording pass");
-check(
-  polished.approved === false,
-  "still unapproved — the patient has to agree before anything is shared",
-);
-console.log(`  ${polished.sections.length} sections, source: ${polished.source}`);
-
-console.log("\n2:15  Speak for Me");
-const spoken = summaryToText(polished, { intro: true });
-const speech = await fetch(`${BASE}/api/speech`, {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body: JSON.stringify({ text: spoken.slice(0, 200), speaker: "patient" }),
-});
-check(
-  speech.status === 200 || speech.status === 204,
-  `speech route answers usefully (${speech.status}${speech.status === 204 ? " = browser will speak" : " = ElevenLabs audio"})`,
-);
-console.log(`  first words: "${spoken.split("\n")[0]}"`);
-
-// ---------------------------------------------------------------------------
-console.log("\n2:30  The doctor asks out loud");
-for (const q of ["When did this start?", "Have you had any chest pain?"]) {
-  const a = await post<{ answered: boolean; answer: string; citedEventIds: string[] }>("/api/ask", {
-    question: q,
-    events,
-    metrics,
-    detection,
-  });
-  console.log(`  doctor: "${q}"`);
-  console.log(`  Alex:   "${a.answer}"`);
-  if (q.includes("chest")) {
-    check(!a.answered, "refuses what is not in the record");
-  } else {
-    check(a.answered && a.citedEventIds.length > 0, "answers and cites its source");
+  let cookie = "";
+  let context = "";
+  async function request<T>(path: string, body?: unknown, expected = 200): Promise<T> {
+    const response = await fetch(new URL(`/api/backend/${path}`, BASE), {
+      method: body === undefined ? "GET" : "POST",
+      headers: {
+        cookie,
+        ...(context ? { "x-carebridge-context": context } : {}),
+        ...(body === undefined
+          ? {}
+          : {
+              "x-carebridge-request": "1",
+              "content-type": "application/json",
+            }),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    const raw = await response.text();
+    assert.equal(response.status, expected, `${path}: ${raw}`);
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) cookie = setCookie.split(";")[0];
+    return JSON.parse(raw) as T;
   }
+
+  const session = await request<{ context: string }>("session", {}, 201);
+  context = session.context;
+  const personalBefore = await request("timeline");
+
+  context = (
+    await request<{ context: string }>("profile", { userId: "alex-demo" })
+  ).context;
+  const health = await request<{
+    daily: unknown[];
+    detection: { triggered: boolean; signals: unknown[] };
+    synthetic: boolean;
+  }>("health");
+  assert.equal(health.synthetic, true);
+  assert.equal(health.daily.length, 84);
+  assert.equal(health.detection.triggered, true);
+
+  const first = await request<{
+    conversationId: string;
+    action: string;
+    drafts: Array<Record<string, unknown>>;
+  }>("assistant", { text: "My lower stomach has been hurting a lot today." });
+  assert.equal(first.action, "ask");
+  assert.equal(first.drafts[0]?.severity, null);
+
+  const second = await request<{
+    action: string;
+    drafts: Array<Record<string, unknown>>;
+  }>("assistant", {
+    text: "About seven.",
+    conversationId: first.conversationId,
+  });
+  assert.equal(second.action, "propose");
+  assert.equal(second.drafts[0]?.severity, 7);
+
+  const now = new Date().toISOString();
+  await request("events", {
+    confirmed: true,
+    events: second.drafts.map((draft) => ({
+      ...draft,
+      id: randomUUID(),
+      occurredAt: now,
+      recordedAt: now,
+      inputMethod: "text",
+    })),
+  });
+  const timeline = await request<{ entries: unknown[] }>("timeline");
+  assert.ok(JSON.stringify(timeline).includes("Abdominal pain"));
+
+  const summary = await request<Record<string, unknown>>("summary/generate", {});
+  assert.equal(summary.approved, false);
+  const approved = await request<Record<string, unknown>>("summary/save", {
+    confirmed: true,
+    approve: true,
+    summary,
+  });
+  assert.equal(approved.approved, true);
+  const speech = await request<{ text: string }>("speech");
+  assert.ok(speech.text.includes("CareBridge"));
+
+  const known = await request<{ answered: boolean; citedEventIds: string[] }>("ask", {
+    question: "When did this start?",
+  });
+  assert.equal(known.answered, true);
+  assert.ok(known.citedEventIds.length > 0);
+  const unknown = await request<{ answered: boolean }>("ask", {
+    question: "Have you recorded any chest pain?",
+  });
+  assert.equal(unknown.answered, false);
+
+  const fitbit = await request<{ allowed: boolean; connected: boolean }>("fitbit/status");
+  assert.equal(fitbit.allowed, false);
+  assert.equal(fitbit.connected, false);
+  await request("fitbit/sync", {}, 403);
+
+  await request("demo/reset", { confirmed: true });
+  context = (
+    await request<{ context: string }>("profile", { userId: "personal" })
+  ).context;
+  assert.deepEqual(await request("timeline"), personalBefore);
+
+  console.log(
+    "PASS integrated rehearsal: Personal unchanged; Alex assistant, confirmed event, timeline, trends, summary, speech, grounded Q&A, Fitbit rejection and reset all work.",
+  );
 }
 
-console.log("\n2:45  The doctor explains something back");
-const back = await post<{ plain: string; original: string }>("/api/explain-back", {
-  text: "I want to rule out an ovarian cyst, so we will order a pelvic ultrasound. Take NSAIDs PRN.",
-  language: "en",
+void main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
 });
-console.log(`  plain: "${back.plain}"`);
-check(back.plain !== back.original, "rewrote the jargon");
-check(back.original.includes("NSAIDs"), "kept the doctor's exact words alongside");
-
-// ---------------------------------------------------------------------------
-console.log("\nBonus  Spanish input");
-const es = await post<Turn>("/api/assistant", {
-  messages: [{ role: "user", content: "Me duele mucho aqu\u00ed, desde ayer." }],
-});
-console.log(`  assistant: "${es.question}"`);
-check(es.detectedLanguage === "es", "detected Spanish");
-check(/[¿?]/.test(es.question ?? ""), "replied in Spanish");
-
-console.log(
-  failures === 0
-    ? "\nDemo path is intact.\n"
-    : `\n${failures} step(s) of the demo are broken.\n`,
-);
-process.exit(failures === 0 ? 0 : 1);
-}
-
-void main();

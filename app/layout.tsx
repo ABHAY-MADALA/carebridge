@@ -4,6 +4,8 @@ import "./globals.css";
 import { SettingsProvider, SETTINGS_KEY } from "@/components/a11y/SettingsProvider";
 import { Chrome } from "@/components/Chrome";
 import { HealthDataProvider } from "@/components/health/useHealthData";
+import { ProfileProvider } from "@/components/profile/ProfileProvider";
+import { ProfileLanguageSync } from "@/components/profile/ProfileLanguageSync";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -49,12 +51,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <SettingsProvider>
-          <HealthDataProvider>
-            <a className="skip-link" href="#main">
-              Skip to main content
-            </a>
-            <Chrome>{children}</Chrome>
-          </HealthDataProvider>
+          <ProfileProvider>
+            <HealthDataProvider>
+              <ProfileLanguageSync />
+              <a className="skip-link" href="#main">
+                Skip to main content
+              </a>
+              <Chrome>{children}</Chrome>
+            </HealthDataProvider>
+          </ProfileProvider>
         </SettingsProvider>
       </body>
     </html>

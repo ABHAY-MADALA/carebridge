@@ -4,6 +4,8 @@ import { useCallback, useState } from "react";
 import { HelpCircle, Loader2, Mic, Square } from "lucide-react";
 import type { GroundedAnswer } from "@/lib/schema";
 import { useHealthData } from "@/components/health/useHealthData";
+import { useProfile } from "@/components/profile/ProfileProvider";
+import type { BackendGroundedAnswer } from "@/lib/backend/client";
 import { useVoiceInput } from "@/components/voice/useVoiceInput";
 import { useSpeaker } from "@/components/voice/useSpeaker";
 import { cn } from "@/lib/utils";
@@ -29,7 +31,8 @@ export function VoiceAdvocate({
 }: {
   speech: ReturnType<typeof useSpeaker>;
 }) {
-  const { events, metrics, detection } = useHealthData();
+  const { events } = useHealthData();
+  const { request } = useProfile();
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [thinking, setThinking] = useState(false);
   const [typed, setTyped] = useState("");
@@ -42,12 +45,10 @@ export function VoiceAdvocate({
       setThinking(true);
 
       try {
-        const res = await fetch("/api/ask", {
+        const answer = await request<BackendGroundedAnswer>("ask", {
           method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ question: q, events, metrics, detection }),
+          body: { question: q },
         });
-        const answer = (await res.json()) as GroundedAnswer;
         setExchanges((prev) => [{ question: q, answer }, ...prev]);
         void speech.speak(answer.answer, { speaker: "patient" });
       } catch {
@@ -63,7 +64,7 @@ export function VoiceAdvocate({
         setThinking(false);
       }
     },
-    [events, metrics, detection, speech],
+    [request, speech],
   );
 
   const voice = useVoiceInput({

@@ -16,142 +16,248 @@ import type {
   InputMethod,
   TrendDetection,
 } from "@/lib/schema";
-import { repository, STORE_EVENT } from "@/lib/store";
-import { detectTrend } from "@/lib/health/trends";
-import { computeBaseline, type BaselineSet } from "@/lib/health/baseline";
 import { draftToEvent } from "@/lib/health/createEvent";
-import { ensureSeeded } from "@/lib/store/ensureSeed";
+import type { BaselineSet } from "@/lib/health/baseline";
+import {
+  BackendClientError,
+  StaleProfileResponseError,
+  type BaselineResponse,
+  type HealthMetric,
+  type HealthSnapshotResponse,
+  type OwnedSummary,
+  type PatientSettings,
+  type TimelineEntry,
+} from "@/lib/backend/client";
+import { useProfile } from "@/components/profile/ProfileProvider";
 
 /*
-  One shared read of the health record for the whole app.
+  One profile-scoped read model for the whole app.
 
-  Baseline and trend detection are recomputed here from the stored data, which
-  means the timeline, the change banner, the explanation and the doctor summary
-  are all reading from the same numbers. They cannot disagree with each other.
+  The browser never computes ownership, baselines or trends. It asks the
+  backend for the active session context, and the backend performs every query
+  through ProfileStore. The arrays in this provider are display state only.
 */
 
 type Ctx = {
   loading: boolean;
+  error: string | null;
   events: HealthEvent[];
   metrics: DailyMetric[];
+  healthMetrics: HealthMetric[];
+  timeline: TimelineEntry[];
   detection: TrendDetection | null;
   baseline: BaselineSet | null;
+  baselineInfo: BaselineResponse | null;
   summary: DoctorSummary | null;
   saveDrafts: (drafts: DraftEvent[], inputMethod: InputMethod) => Promise<HealthEvent[]>;
   deleteEvent: (id: string) => Promise<void>;
   saveSummary: (summary: DoctorSummary | null) => Promise<void>;
+  generateSummary: () => Promise<DoctorSummary>;
+  getApprovedSpeech: (section?: string) => Promise<string>;
   resetDemo: () => Promise<void>;
+  refresh: () => Promise<void>;
+  patientSettings: PatientSettings | null;
+  savePatientSettings: (settings: PatientSettings) => Promise<void>;
 };
 
 const HealthDataContext = createContext<Ctx | null>(null);
 
 export function HealthDataProvider({ children }: { children: React.ReactNode }) {
+  const { context, request, recoverSession } = useProfile();
   const [events, setEvents] = useState<HealthEvent[]>([]);
   const [metrics, setMetrics] = useState<DailyMetric[]>([]);
+  const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const [detection, setDetection] = useState<TrendDetection | null>(null);
+  const [baseline, setBaseline] = useState<BaselineSet | null>(null);
+  const [baselineInfo, setBaselineInfo] = useState<BaselineResponse | null>(null);
   const [summary, setSummary] = useState<DoctorSummary | null>(null);
+  const [patientSettings, setPatientSettings] = useState<PatientSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [e, m, s] = await Promise.all([
-      repository.listEvents(),
-      repository.listMetrics(),
-      repository.getSummary(),
-    ]);
-    setEvents(e);
-    setMetrics(m);
-    setSummary(s);
-  }, []);
+    const requestedContext = context;
+    try {
+      const [health, timelineResponse, summaryResponse, settingsResponse] =
+        await Promise.all([
+          request<HealthSnapshotResponse>("health"),
+          request<{ entries: TimelineEntry[] }>("timeline"),
+          request<{ summary: OwnedSummary | null }>("summary"),
+          request<{ settings: PatientSettings }>("settings"),
+        ]);
+      if (requestedContext !== context) return;
+      setEvents(health.events);
+      setMetrics(health.daily);
+      setHealthMetrics(health.metrics);
+      setDetection(health.detection);
+      setBaseline(health.baseline.values);
+      setBaselineInfo(health.baseline);
+      setTimeline(timelineResponse.entries);
+      setSummary(summaryResponse.summary);
+      setPatientSettings(settingsResponse.settings);
+      setError(null);
+    } catch (cause) {
+      if (cause instanceof StaleProfileResponseError || cause instanceof DOMException) return;
+      if (
+        cause instanceof BackendClientError &&
+        (cause.code === "profile-context-required-or-stale" ||
+          cause.code === "profile-context-changed")
+      ) {
+        await recoverSession();
+        return;
+      }
+      setError(
+        cause instanceof BackendClientError
+          ? cause.code
+          : "Your health information could not be loaded.",
+      );
+    }
+  }, [context, recoverSession, request]);
 
   useEffect(() => {
     let cancelled = false;
-
-    (async () => {
-      // Seed Alex on first visit so a judge sees a populated product rather
-      // than an empty state that needs 30 days of use to become interesting.
-      await ensureSeeded();
-      if (!cancelled) {
-        await refresh();
-        setLoading(false);
-      }
-    })();
-
-    const onChange = () => void refresh();
-    window.addEventListener(STORE_EVENT, onChange);
+    setLoading(true);
+    setError(null);
+    setEvents([]);
+    setMetrics([]);
+    setHealthMetrics([]);
+    setTimeline([]);
+    setDetection(null);
+    setBaseline(null);
+    setBaselineInfo(null);
+    setSummary(null);
+    setPatientSettings(null);
+    void refresh().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
     return () => {
       cancelled = true;
-      window.removeEventListener(STORE_EVENT, onChange);
     };
-  }, [refresh]);
-
-  const detection = useMemo(
-    () => (metrics.length ? detectTrend(metrics) : null),
-    [metrics],
-  );
-
-  const baseline = useMemo(() => {
-    if (!metrics.length || !detection) return null;
-    const excluded = new Set(
-      metrics.slice(-detection.windowDays).map((m) => m.date),
-    );
-    return computeBaseline(metrics, detection.phase, excluded);
-  }, [metrics, detection]);
+  }, [context, refresh]);
 
   const saveDrafts = useCallback(
     async (drafts: DraftEvent[], inputMethod: InputMethod) => {
       const finalized = drafts.map((d) => draftToEvent(d, inputMethod, metrics));
-      await repository.addEvents(finalized);
+      const result = await request<{ events: HealthEvent[] }>("events", {
+        method: "POST",
+        body: { confirmed: true, events: finalized },
+      });
       await refresh();
-      return finalized;
+      return result.events;
     },
-    [metrics, refresh],
+    [metrics, refresh, request],
   );
 
   const deleteEvent = useCallback(
     async (id: string) => {
-      await repository.deleteEvent(id);
+      await request("events/delete", {
+        method: "POST",
+        body: { confirmed: true, id },
+      });
       await refresh();
     },
-    [refresh],
+    [refresh, request],
   );
 
   const saveSummary = useCallback(
     async (next: DoctorSummary | null) => {
-      await repository.saveSummary(next);
-      setSummary(next);
+      if (!next) {
+        setSummary(null);
+        return;
+      }
+      const saved = await request<OwnedSummary>("summary/save", {
+        method: "POST",
+        body: {
+          confirmed: true,
+          approve: next.approved,
+          summary: next,
+        },
+      });
+      setSummary(saved);
     },
-    [],
+    [request],
+  );
+
+  const generateSummary = useCallback(async () => {
+    const generated = await request<OwnedSummary>("summary/generate", {
+      method: "POST",
+      body: {},
+    });
+    setSummary(generated);
+    return generated;
+  }, [request]);
+
+  const getApprovedSpeech = useCallback(
+    async (section?: string) => {
+      const query = section ? `?section=${encodeURIComponent(section)}` : "";
+      const result = await request<{ text: string }>(`speech${query}`);
+      return result.text;
+    },
+    [request],
   );
 
   const resetDemo = useCallback(async () => {
-    await repository.reset();
-    await ensureSeeded();
+    await request("demo/reset", {
+      method: "POST",
+      body: { confirmed: true },
+    });
     await refresh();
-  }, [refresh]);
+  }, [refresh, request]);
+
+  const savePatientSettings = useCallback(
+    async (next: PatientSettings) => {
+      const saved = await request<PatientSettings>("settings", {
+        method: "POST",
+        body: next,
+      });
+      setPatientSettings(saved);
+    },
+    [request],
+  );
 
   const value = useMemo(
     () => ({
       loading,
+      error,
       events,
       metrics,
+      healthMetrics,
+      timeline,
       detection,
       baseline,
+      baselineInfo,
       summary,
       saveDrafts,
       deleteEvent,
       saveSummary,
+      generateSummary,
+      getApprovedSpeech,
       resetDemo,
+      refresh,
+      patientSettings,
+      savePatientSettings,
     }),
     [
       loading,
+      error,
       events,
       metrics,
+      healthMetrics,
+      timeline,
       detection,
       baseline,
+      baselineInfo,
       summary,
       saveDrafts,
       deleteEvent,
       saveSummary,
+      generateSummary,
+      getApprovedSpeech,
       resetDemo,
+      refresh,
+      patientSettings,
+      savePatientSettings,
     ],
   );
 

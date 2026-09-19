@@ -45,7 +45,30 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
-All tasks complete. The app builds, typechecks, and `npm run verify` passes.
+### Two-profile backend + frontend cutover (September 19, 2026)
+
+`lib/backend/*` and `app/api/backend/[...path]/route.ts` provide local SQLite,
+two controlled sessions/profiles, user-bound queries, Personal-only OAuth/sync,
+scoped deterministic baseline/trends/summary/AI, and confirmed synthetic
+import/reset. The frontend now uses that backend exclusively for health data.
+Read `docs/backend-profiles.md` for the contract and security boundary.
+
+**Abhay — Personal** starts empty. **Alex — Demo Patient** gets the existing
+84-day deterministic synthetic history and displays a persistent
+`Demo · Synthetic data` indicator. Profile switching aborts old requests,
+rejects mismatched response contexts, unmounts profile UI state, stops speech,
+clears audio blobs and assistant handoff state, and then loads the new backend
+context. Old localStorage health data is read only by a one-time review gate;
+ambiguous records are never assigned automatically.
+
+The legacy local repository/client Fitbit merge modules were removed. Legacy
+unscoped `/api/assistant`, `/api/ask`, `/api/summary` and `/api/fitbit/*` paths
+return HTTP 410. All screens write through `/api/backend/*`.
+
+Verification passed: typecheck, production build, five domain/UI suites, 20
+backend isolation groups, 14 API/OAuth groups, 7 frontend boundary groups, the
+integrated port-3000 rehearsal, and the disposable port-3101 profile rehearsal.
+The production server is running on `127.0.0.1:3000`.
 
 | # | Task | Status |
 |---|------|--------|
@@ -72,6 +95,7 @@ All tasks complete. The app builds, typechecks, and `npm run verify` passes.
 | 20 | Reference-led charcoal/sand UI, persisted light/dark toggle, original interactive front/back SVG anatomy, compact symptom panel | done |
 | 21 | Realistic local CC0 human mesh, reference-style 3D workspace, surface pain glow, four camera presets, zoom/expand, dark/light materials | done |
 | 22 | Focused demo-readiness fixes: onset provenance, calm measurements, consistent navigation, guided icons, single body action, confirmed Timeline removal, loading/retry, Timer compatibility | done |
+| 23 | Backend-owned Personal/Alex profiles, frontend cutover, migration review, scoped Fitbit/AI/summary/timeline, isolation tests | done |
 
 ### Latest UI revision (September 19, 2026)
 
@@ -156,27 +180,23 @@ browser storage. The localhost patient record was not used for test saves.
 **Nothing is in progress**, except one external step only the human can do:
 
 1. **Finish the Google Cloud Console side of Fitbit and hand over credentials.**
-   `lib/health/googleHealth.ts` / `app/api/fitbit/*` are built and pass every
+   `lib/backend/fitbit*.ts` / `app/api/backend/[...path]/route.ts` are built and pass every
    automated check, but nobody has run the OAuth flow against a real Google
    account yet. Whoever does: create a Cloud project, enable the Health API,
    add yourself as a test user (Testing status, not verified — fine for a
-   demo), generate a Web Server OAuth client, and **check what redirect URI
-   the Cloud Console actually accepts** — `app/api/fitbit/callback/route.ts`
-   assumes a normal custom redirect works; if Google forces a fixed one
-   instead, that route needs a "paste your authorization code" fallback UI in
-   `FitbitConnect.tsx` rather than the current redirect-based flow. Add
-   `GOOGLE_HEALTH_CLIENT_ID`/`SECRET`/`REDIRECT_URI` to `.env.local` and run
-   through Connect → real sync once, since a `getUserMedia`-style permission
-   prompt and a fixed-redirect surprise are the two things a machine can't
-   pre-check here (`npm run rehearse` and the button audit all still pass
-   with the Fitbit card in "Setup required," so this doesn't block anything
-   else).
+   demo), generate a Web Server OAuth client, and register exactly
+   `http://localhost:3000/api/backend/fitbit/callback`. Add
+   `GOOGLE_HEALTH_CLIENT_ID`, `GOOGLE_HEALTH_CLIENT_SECRET`, and
+   `CAREBRIDGE_FITBIT_REDIRECT_URI` to `.env.local`, restart, and complete
+   Connect → callback → sync → compare with the wearable app → disconnect →
+   reconnect. Current backend status is `configured:false`, `connected:false`;
+   no connection or data is fabricated.
 2. **English → patient-language summary.** Input translation works (Spanish in,
    English preserved alongside the original). The reverse — reading the finished
    summary back in Spanish — only works when an LLM key is present; there is no
    offline path. See "Known limits".
-3. **Supabase.** Implement `Repository` and change one line in
-   `lib/store/index.ts`.
+3. **Production deployment is deliberately out of scope.** The controlled
+   profiles are local hackathon identities, not public authentication.
 
 ---
 
@@ -245,7 +265,12 @@ components/
                           either way; pain step uses BodyPicker now), BodyMap,
                           SeverityScale — BodyMap (the old 2D picker) is kept
                           on purpose only for QuickPhrases' quick in-appointment tap
-  health/useHealthData.tsx  One shared read of the record; recomputes baseline + trends
+  health/useHealthData.tsx  Profile-scoped read model over `/api/backend`; consumes server baseline/trends
+  profile/
+    ProfileProvider.tsx     Session/context boundary, switch aborts, stale-response rejection
+    ProfileSwitcher.tsx     Controlled Personal ↔ Alex switch + demo indicator
+    LegacyMigrationGate.tsx Explicit review/import of old browser records
+    ProfileLanguageSync.tsx Per-profile language over device-level a11y settings
   insights/               ChangeBanner, WhyAmISeeingThis (now built on HealthMetric),
                           MetricChart
   explain/SummaryEditor   One flowing document (thin dividers, not stacked cards),
@@ -294,11 +319,15 @@ lib/
     fitbitSync.ts           Client-side read-merge-write into DailyMetric by date;
                             runs in the browser because LocalRepository has to
   store/
-    repository.ts         The interface the whole app talks to
-    localRepository.ts    localStorage implementation + STORE_EVENT
-    index.ts              Chooses the backend. Swap here for Supabase
-    ensureSeed.ts         Seeds Alex once
     seed.ts               Alex's deterministic history
+  backend/
+    database.ts           Local SQLite, controlled sessions, profile revisions
+    store.ts              Profile-bound SQL reads/writes; no unscoped health query
+    health.ts             Scoped snapshot, baseline, trends, summary, AI contexts
+    http.ts               `/api/backend/*` contract and request/context enforcement
+    fitbit*.ts            Personal-only OAuth, token lifecycle, normalize/persist
+    client.ts             Frontend contract types and context response policy
+  migration/legacy.ts     Read-only legacy classification; no automatic ownership
 scripts/
   verify-engine.ts        Seed, baselines, detection thresholds
   verify-fallback.ts      The deterministic parser, including the demo dialogue
@@ -306,6 +335,8 @@ scripts/
   verify-advocate.ts      Grounded answers, refusals, citations, summary safety
   check-voice.ts          What is configured + ElevenLabs quota
   rehearse.ts             Walks the whole demo script against a running server
+  verify-profile-*.ts     Persistence/API/frontend cross-profile contamination checks
+  rehearse-profiles.ts    Destructive rehearsal for a disposable non-3000 database
 ```
 
 ## Invariants a newcomer would otherwise break
@@ -333,6 +364,14 @@ scripts/
   this itself". Do not convert it to an error.
 - **The no-diagnosis guard is not applied to `/api/explain-back`.** There the
   model relays what a doctor said, and a doctor may name a condition.
+- **Every health request is profile-scoped in the backend.** Frontend filtering
+  is not a security or ownership boundary. Use `ProfileStore` and send the
+  session's `X-CareBridge-Context`; never add an unscoped SQL health query.
+- **Profile switches are destructive to transient UI state by design.** Abort
+  old requests, reject late response contexts, unmount chat/summary/Q&A state,
+  stop speech, and clear cached audio before rendering the new profile.
+- **Do not restore the deleted local repository path.** localStorage is retained
+  only for display accessibility preferences and one-time read-only migration.
 - **`lib/i18n/messages.ts` translates display text only.** Anything stored
   (`HealthEvent.label`, `onset`) or matched against `lib/ai/fallback.ts`'s
   vocabulary (`BODY_PARTS`, `bodyLocation`) stays English at every layer —
@@ -387,30 +426,23 @@ Everything is optional; see `.env.local.example`. What degrades without each:
 | `ELEVENLABS_API_KEY` | Speech falls back to browser `SpeechSynthesis`; voice input falls back to `SpeechRecognition` (Chrome only). |
 | `ELEVENLABS_VOICE_ID` | A default voice is used. |
 | `ELEVENLABS_CLINICAL_VOICE_ID` | Recognized but unused — CareBridge uses one voice (`ELEVENLABS_VOICE_ID`) everywhere. |
-| `GOOGLE_HEALTH_CLIENT_ID` / `GOOGLE_HEALTH_CLIENT_SECRET` / `GOOGLE_HEALTH_REDIRECT_URI` | The home page shows "Fitbit — Setup required." Nothing else is affected. |
+| `GOOGLE_HEALTH_CLIENT_ID` / `GOOGLE_HEALTH_CLIENT_SECRET` / `CAREBRIDGE_FITBIT_REDIRECT_URI` | Personal shows "Setup required." Alex remains synthetic-only. |
 
 ## Hosting
 
-Deployed on Vercel, project `carebridge` under the `madalaabhay1-2226s-projects`
-scope — `vercel.json` pins `"framework": "nextjs"` (needed once the project was
-created via `vercel project add` rather than the normal auto-detected first
-deploy, or Vercel defaults to a static "public/" output and the build fails).
-Deployment protection (SSO) was disabled on this project so the preview URL is
-genuinely public, not gated behind a Vercel login.
+Local-only at the user's request (September 19, 2026). The current production
+build runs from `/Users/madalaabhay/Documents/CAREBRIDGE` at
+`http://localhost:3000`, bound to `127.0.0.1`; the home route returned HTTP 200.
+Start it with `npm run start -- --hostname 127.0.0.1 --port 3000` after building.
 
-**This is a preview deployment, not production** — `vercel --prod` was blocked
-by this environment's own safety guardrail for production deploys, so nobody
-has promoted a build yet. The live preview URL is real and public but is tied
-to that one deployment; it won't auto-update on a future `git push` the way a
-production alias would. To promote it (or to wire up auto-deploy-on-push), run
-`vercel --prod` from a human session, or connect the Vercel project to a Git
-remote from the dashboard.
-
-No secrets were uploaded — `.env.local` is gitignored and untouched by the
-deploy, so the hosted copy runs the fully-supported keyless fallback path
-(rule-based assistant, browser speech) until someone adds
-`OPENAI_API_KEY`/`ELEVENLABS_API_KEY`/etc. as Environment Variables in the
-Vercel project settings.
+The user explicitly requested removal of the outdated Vercel preview. Deployment
+`dpl_AQwzm6orHH8o1VMHLz4EsM6JDo75`
+(`carebridge-apl68brbp-madalaabhay1-2226s-projects.vercel.app`) was deleted;
+Vercel confirmed one deployment removed. The Vercel project `carebridge` under
+`madalaabhay1-2226s-projects` and its failed production-deployment history were
+left intact. Local source, `.env.local`, and patient browser storage are untouched.
+Do not redeploy without a new user request. `vercel.json` remains for historical
+configuration; no secrets were uploaded by the earlier preview deployment.
 
 ## How to run
 
@@ -428,12 +460,16 @@ npm run rehearse     # walks the demo script against a running dev server
 
 ## Deliberate shortcuts — do not "fix" these
 
-- **No database and no auth.** Data lives in `localStorage` behind the
-  `Repository` interface. Intentional for demo reliability.
-- **One seeded patient (Alex).** No multi-user concept exists.
-- **`/api/ask` receives the record in the request body.** A consequence of
-  local-first storage. When a database exists, the route should read the record
-  itself and the client should send only the question.
+- **Local SQLite and controlled sessions, not production auth.** This is a
+  two-profile hackathon boundary for one trusted local machine. Never expose it
+  on a LAN or public deployment. Production needs real authentication,
+  authorization and encrypted managed storage.
+- **Exactly two profiles.** Personal and Alex are not a general multi-user,
+  caregiver, family or dependent system.
+- **The backend database is not encrypted at rest by this app.** It is
+  gitignored under `.carebridge-data`, with restrictive file permissions.
+- **Legacy health APIs return HTTP 410.** Do not reconnect screens to them;
+  all owned health reads/writes use `/api/backend/*`.
 - **The history is 84 days, not the 30 the brief suggested.** A cycle-aware
   baseline needs more than one cycle to compare a phase against itself; 30 days
   yields an `n` of about 2 for the current phase. The timeline emphasises recent
@@ -462,12 +498,10 @@ npm run rehearse     # walks the demo script against a running dev server
   fallback path (the one AGENTS.md treats as defensible) is unaffected —
   confirmed by rehearsing once with `.env.local` renamed, which passes clean.
 - **Fitbit-via-Google-Health is built but not yet run against a real Google
-  account.** See item 1 under "Sensible next steps" above — the OAuth+PKCE
-  code, the `dailyRollUp` request shape, and the redirect-URI handling in
-  `app/api/fitbit/callback/route.ts` are all best-effort against Google's
-  current (thin, new-as-of-2026) docs, not verified against a live response.
-  Testing-mode OAuth tokens there also expire in 7 days, so "reauth required"
-  will be a normal, frequent state once real credentials exist, not a bug.
+  account.** Current Personal status is `configured:false`, `connected:false`.
+  The OAuth+PKCE, normalization and race handling pass injected-fixture tests,
+  but the callback/token refresh/provider response still need a live account.
+  Testing-mode OAuth tokens expire in 7 days, so "reauth required" is expected.
 - **The realistic body is a communication aid, not a medical segmentation model.**
   Surface hit tests map to broad canonical regions using local coordinates and
   face direction. The region list is the precise keyboard/screen-reader path.

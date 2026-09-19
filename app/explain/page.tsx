@@ -12,18 +12,24 @@ import {
   Volume2,
   Wand2,
 } from "lucide-react";
-import type { DoctorSummary } from "@/lib/schema";
 import { useHealthData } from "@/components/health/useHealthData";
 import { useSpeaker } from "@/components/voice/useSpeaker";
 import { SummaryEditor } from "@/components/explain/SummaryEditor";
 import { HelpTip } from "@/components/HelpTip";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useT } from "@/components/a11y/useT";
-import { buildSummary, summaryToText, summaryForDisplay } from "@/lib/health/summary";
+import { summaryForDisplay } from "@/lib/health/summary";
 import { relativeDays } from "@/lib/dates";
 
 export default function ExplainPage() {
-  const { loading, events, metrics, detection, summary: storedSummary, saveSummary } = useHealthData();
+  const {
+    loading,
+    events,
+    summary: storedSummary,
+    saveSummary,
+    generateSummary,
+    getApprovedSpeech,
+  } = useHealthData();
   const summary = summaryForDisplay(storedSummary, events);
   const speech = useSpeaker();
   const { t } = useT();
@@ -33,24 +39,11 @@ export default function ExplainPage() {
   const generate = useCallback(async () => {
     setWorking(true);
     try {
-      // Built from the record first. The model is only ever asked to reword it.
-      const base = buildSummary(events, metrics, detection);
-      let next = base;
-      try {
-        const res = await fetch("/api/summary", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ summary: base }),
-        });
-        if (res.ok) next = (await res.json()) as DoctorSummary;
-      } catch {
-        // Keep the deterministic version; it is complete on its own.
-      }
-      await saveSummary(next);
+      await generateSummary();
     } finally {
       setWorking(false);
     }
-  }, [events, metrics, detection, saveSummary]);
+  }, [generateSummary]);
 
   const approve = useCallback(async () => {
     if (!summary) return;
@@ -65,10 +58,9 @@ export default function ExplainPage() {
       Fetch the audio the moment it is approved, so pressing Speak for Me in
       front of a doctor plays instantly instead of showing a spinner.
     */
-    speech.prewarm(summaryToText(approved, { intro: true }), "patient");
-  }, [summary, saveSummary, speech]);
-
-  const spokenText = summary ? summaryToText(summary, { intro: true }) : "";
+    const approvedText = await getApprovedSpeech();
+    speech.prewarm(approvedText, "patient");
+  }, [getApprovedSpeech, summary, saveSummary, speech]);
 
   return (
     <div className="space-y-8">
@@ -161,7 +153,9 @@ export default function ExplainPage() {
                     type="button"
                     className="btn btn-lg btn-primary"
                     onClick={() =>
-                      speech.speaking ? speech.stop() : void speech.speak(spokenText)
+                      speech.speaking
+                        ? speech.stop()
+                        : void getApprovedSpeech().then((text) => speech.speak(text))
                     }
                   >
                     {speech.speaking ? (

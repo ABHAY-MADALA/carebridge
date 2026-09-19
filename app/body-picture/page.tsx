@@ -8,8 +8,6 @@ import { BodyPicker } from "@/components/body/BodyPicker";
 import { useHealthData } from "@/components/health/useHealthData";
 import { useT } from "@/components/a11y/useT";
 import { painLabelFor } from "@/lib/health/categories";
-import { draftToEvent } from "@/lib/health/createEvent";
-import { repository } from "@/lib/store";
 import type { DraftEvent } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -27,12 +25,12 @@ const ONSETS = [
 
 /*
   The flagship standalone Body Picture experience — same HealthEvent schema
-  and save path (draftToEvent -> repository.addEvent) that ManualEntry and
+  and confirmed save path that ManualEntry and
   the assistant use, so whatever gets recorded here shows up in Timeline,
   Health Changes, and Help Me Explain exactly like any other entry.
 */
 export default function BodyPicturePage() {
-  const { metrics } = useHealthData();
+  const { saveDrafts } = useHealthData();
   const { t, tRaw, lang } = useT();
 
   const [location, setLocation] = useState<string | null>(null);
@@ -102,7 +100,7 @@ export default function BodyPicturePage() {
       cyclePhase: null,
     };
     try {
-      await repository.addEvent(draftToEvent(draft, "visual", metrics));
+      await saveDrafts([draft], "visual");
       setSaved(true);
     } catch {
       setError(lang === "es" ? "No se pudo guardar. Inténtalo de nuevo." : "Could not save your entry. Please try again.");

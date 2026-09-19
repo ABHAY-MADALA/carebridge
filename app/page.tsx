@@ -10,10 +10,11 @@ import { useHealthData } from "@/components/health/useHealthData";
 import { useT } from "@/components/a11y/useT";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { TimelineEntry } from "@/components/ui/TimelineEntry";
-import { fitbitSource } from "@/lib/health/sources";
 import { sendToAssistant } from "@/lib/assistantHandoff";
 import { formatDayHeading, formatTime, dateKeyOf } from "@/lib/dates";
 import { useEffect } from "react";
+import { useProfile } from "@/components/profile/ProfileProvider";
+import type { FitbitStatus } from "@/lib/backend/client";
 
 const MOODS = [
   { value: "great", prompt: "I'm feeling great today." },
@@ -25,6 +26,7 @@ const MOODS = [
 export default function HomePage() {
   const router = useRouter();
   const { loading, events, detection } = useHealthData();
+  const { profile, context, request } = useProfile();
   const { t } = useT();
   const [draft, setDraft] = useState("");
   const [fitbitConnected, setFitbitConnected] = useState<boolean | null>(null);
@@ -32,8 +34,14 @@ export default function HomePage() {
   const recent = events.slice(0, 4);
 
   useEffect(() => {
-    void fitbitSource.status().then((s) => setFitbitConnected(s.connected));
-  }, []);
+    if (profile.synthetic) {
+      setFitbitConnected(false);
+      return;
+    }
+    void request<FitbitStatus>("fitbit/status")
+      .then((status) => setFitbitConnected(status.connected))
+      .catch(() => setFitbitConnected(false));
+  }, [context, profile.synthetic, request]);
 
   const goToAssistant = (text: string, autoSend: boolean) => {
     sendToAssistant(text, autoSend);
@@ -53,7 +61,7 @@ export default function HomePage() {
 
       <header>
         <h1 className="text-[1.75rem] font-semibold tracking-tight text-ink md:text-3xl">
-          {t("home.greeting")}
+          {profile.synthetic ? t("home.greeting") : `Hello, ${profile.name}`}
         </h1>
         <p className="mt-1 text-base text-muted">{t("home.tagline")}</p>
       </header>
@@ -174,7 +182,11 @@ export default function HomePage() {
         >
           <span className="inline-flex items-center gap-2 text-ink">
             <Watch className="h-4 w-4 text-muted" aria-hidden />
-            {fitbitConnected ? t("home.fitbitConnectedShort") : t("home.fitbitStatusShort")}
+            {profile.synthetic
+              ? "Demo wearable data"
+              : fitbitConnected
+                ? t("home.fitbitConnectedShort")
+                : t("home.fitbitStatusShort")}
           </span>
           <ArrowRight className="h-4 w-4 text-muted" aria-hidden />
         </Link>

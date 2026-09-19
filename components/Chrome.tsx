@@ -8,6 +8,7 @@ import { MobileNav } from "@/components/MobileNav";
 import { ReadAloud } from "@/components/a11y/ReadAloud";
 import { useT } from "@/components/a11y/useT";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { DemoIndicator, ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 
 /*
   Patient chrome (nav, settings, footer) stays off the clinician screen.
@@ -34,8 +35,14 @@ export function Chrome({ children }: { children: React.ReactNode }) {
       <>
         <header className="border-b-2 border-line bg-surface">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <p className="label">{t("clinician.patientGenerated")}</p>
-            <ThemeToggle />
+            <div>
+              <p className="label">{t("clinician.patientGenerated")}</p>
+              <DemoIndicator className="mt-1" />
+            </div>
+            <div className="flex items-center gap-2">
+              <ProfileSwitcher compact placement="below" />
+              <ThemeToggle />
+            </div>
             <Link href="/explain" className="btn btn-sm btn-ghost">
               <ArrowLeft className="h-4 w-4" aria-hidden />
               {t("nav.explain")}
@@ -56,7 +63,10 @@ export function Chrome({ children }: { children: React.ReactNode }) {
         <MobileNav />
         <div className="workspace-bar hidden md:flex">
           <span>CareBridge <span className="mx-2 opacity-40">/</span> {t(`nav.${({"/": "home", "/body-picture": "bodyPicture", "/guided-check-in": "guidedCheckIn", "/timeline": "timeline", "/insights": "insights", "/explain": "explain", "/tell-carebridge": "tell", "/my-health": "myHealth"} as Record<string, string>)[pathname] ?? "home"}`)}</span>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <DemoIndicator />
+            <ThemeToggle />
+          </div>
         </div>
         <ReadAloud />
         <main id="main" className="workspace-main mx-auto w-full max-w-[1440px] flex-1 px-4 pb-8 pt-6 md:px-9 md:pb-8 md:pt-8">
