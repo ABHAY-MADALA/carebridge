@@ -79,12 +79,8 @@ export function TopNav() {
   return (
     <header className="top-nav-shell">
       <div className="top-nav-inner">
-        <Link href="/" className="top-nav-brand" aria-label="CareBridge home">
-          <BrandMark className="h-8 w-8" />
-          <span>
-            <strong>CareBridge</strong>
-            <small>{lang === "es" ? "Tu salud, en contexto" : "Your health, in context"}</small>
-          </span>
+        <Link href="/" className="top-nav-brand" aria-label="HealthThread home">
+          <BrandMark className="top-nav-brand-logo" />
         </Link>
 
         <div className="top-nav-account">
