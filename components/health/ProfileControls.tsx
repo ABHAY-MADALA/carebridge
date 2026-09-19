@@ -14,9 +14,8 @@ export function ProfileControls() {
         <section className="mt-8 rounded-2xl border border-line bg-surface p-5">
           <h2 className="text-lg font-semibold text-ink">Reset demo scenario</h2>
           <p className="mt-1 text-sm text-muted">
-            This replaces Alex&apos;s records with the original deterministic 84-day
-            synthetic history. It cannot modify Abhay&apos;s Personal events, Fitbit
-            connection or measurements.
+            This replaces this session&apos;s records with the original deterministic
+            84-day synthetic history. It cannot affect another visitor&apos;s demo.
           </p>
           {!confirmReset ? (
             <button

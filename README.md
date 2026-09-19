@@ -42,6 +42,29 @@ npm run check-voice                # what is configured, and ElevenLabs quota
 | `npm run rehearse` | Walks the whole demo script against a running dev server |
 | `npm run rehearse:profiles` | Destructive profile rehearsal; requires a disposable non-3000 server/database |
 
+### Public synthetic demo
+
+The same codebase has two server-enforced modes:
+
+- Normal local mode keeps the existing **Abhay — Personal** and **Alex — Demo
+  Patient** profiles and continues using `.carebridge-data/carebridge.sqlite`.
+- Public demo mode exposes only Alex, uses temporary in-memory storage, gives
+  each browser session an isolated copy of the deterministic scenario, rejects
+  direct attempts to select Personal, and never enables real Fitbit or document
+  uploads.
+
+For a local preview of exactly what judges will see:
+
+```bash
+npm run build
+npm run preview:public
+```
+
+Stop that preview and run the usual `npm run dev` or `npm run start` to return
+to private mode. The included `render.yaml` enables public mode on Render. Render supplies
+`RENDER_EXTERNAL_URL`; use `HEALTHTHREAD_PUBLIC_ORIGIN` only when deploying to a
+different host or custom domain. Never deploy `.carebridge-data` or `.env.local`.
+
 ### Real Fitbit for Personal
 
 Register this exact callback in the Google Cloud OAuth client:
@@ -77,18 +100,12 @@ part.
 > language that isn't the clinic's, and nobody remembers three months of
 > symptoms in a five-minute appointment."
 
-**0:10 — Open HealthThread.** Start on **Abhay — Personal**. Open **My Health** and,
-if real OAuth has been completed, show the actual connected status, last sync
-timestamp and measurements.
+**0:10 — Open HealthThread.** The public link opens directly as **Alex — Demo
+Patient**. Point out the persistent **Demo · Synthetic data** badge.
 
-> "HealthThread can ingest real wearable information and build a personal health
-> history. This profile starts empty and only uses my own records."
-
-Use the profile switcher and choose **Alex — Demo Patient**. Point out the
-persistent **Demo · Synthetic data** badge.
-
-> "For the demonstration we're switching to a synthetic patient so the scenario
-> is reproducible. These profiles are separated in the backend."
+> "This public demonstration uses a fictional patient so the scenario is
+> reproducible and no real health information is exposed. Every visitor receives
+> an isolated copy."
 
 Return to the home page. Point at **Tell HealthThread** filling the screen.
 

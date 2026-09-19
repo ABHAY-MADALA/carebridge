@@ -127,7 +127,7 @@ export function RecordUploader() {
         </div>
       </div>
 
-      {profile.synthetic ? <p className="records-empty">Use your Personal profile to upload medical records. Alex remains synthetic-only.</p> : <div
+      {profile.synthetic ? <p className="records-empty">Record upload is disabled in this synthetic demo. No real medical files are collected.</p> : <div
         className={`record-upload-zone${dragging ? " is-dragging" : ""}`}
         onDragEnter={(event) => { event.preventDefault(); setDragging(true); }}
         onDragOver={(event) => event.preventDefault()}

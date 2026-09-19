@@ -98,10 +98,14 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     );
     const alreadyReviewed =
       window.localStorage.getItem(MIGRATION_REVIEWED_KEY) === "yes";
+    const publicSyntheticDemo =
+      next.profiles.length === 1 && next.profile.synthetic;
     setMigrationRequired(
-      migrationInProgress ||
-        (!alreadyReviewed &&
-          hasLegacyHealthData(classifyLegacyStorage(window.localStorage))),
+      publicSyntheticDemo
+        ? false
+        : migrationInProgress ||
+            (!alreadyReviewed &&
+              hasLegacyHealthData(classifyLegacyStorage(window.localStorage))),
     );
     contextRef.current = next.context;
     setSession(next);
@@ -259,8 +263,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           <h1 className="text-2xl font-semibold">HealthThread could not open your profile</h1>
           <p className="mt-2 text-muted">{error}</p>
           <p className="mt-2 text-sm text-muted">
-            HealthThread profiles run only on this computer. Open the app at localhost or
-            127.0.0.1, then try again.
+            The secure profile session could not start. Refresh the page, then try again.
           </p>
           <button
             type="button"

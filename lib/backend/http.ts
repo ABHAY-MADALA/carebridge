@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { HealthEvent, DailyMetric } from "@/lib/schema";
-import { BackendDatabase, getDatabase, type Session } from "./database";
-import { ProfileId, PROFILES, OwnedSummary, AIImportCandidateInput, BackendError } from "./schema";
+import { BackendDatabase, getDatabase, getProfileDatabase, type Session } from "./database";
+import { ProfileId, OwnedSummary, AIImportCandidateInput, BackendError } from "./schema";
+import { publicDemoEnabled, publicDemoOrigin, runtimeProfiles } from "./runtime";
 import { ProfileStore, newRecordId } from "./store";
 import { healthSnapshot, timeline, generateSummaryForProfile, ask, assistant, approvedSpeech } from "./health";
 import { FitbitService } from "./fitbit";
@@ -12,7 +13,12 @@ const cookieName = "carebridge_backend_session";
 export const contextKey = (s: Session) => `${s.userId}:${s.revision}`;
 const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 const json = (data: unknown, status = 200, session?: Session) => NextResponse.json(data, { status, headers: { ...headers, ...(session ? { "X-CareBridge-Context": contextKey(session) } : {}) } });
-const profileInfo = (s: Session) => ({ profile: PROFILES.find(p => p.id === s.userId), profiles: PROFILES, context: contextKey(s) });
+const profileInfo = (s: Session) => {
+  const profiles = runtimeProfiles();
+  const profile = profiles.find((candidate) => candidate.id === s.userId);
+  if (!profile) throw new BackendError(403, "profile-not-available");
+  return { profile, profiles, context: contextKey(s) };
+};
 const Confirm = z.object({ confirmed: z.literal(true) }).strict();
 
 function requestBoundary(req: Request, callback: boolean) {
@@ -20,6 +26,22 @@ function requestBoundary(req: Request, callback: boolean) {
   // Next may normalize req.url to localhost even for a 127.0.0.1 browser.
   // Validate the actual Host before comparing Origin; never trust forwarded hosts.
   const host = req.headers.get("host") ?? url.host;
+  if (publicDemoEnabled()) {
+    if (callback) throw new BackendError(403, "public-demo-synthetic-only");
+    const configuredOrigin = publicDemoOrigin();
+    if (host !== configuredOrigin.host) throw new BackendError(403, "invalid-host");
+    const origin = req.headers.get("origin");
+    if (
+      (origin && origin !== configuredOrigin.origin) ||
+      req.headers.get("sec-fetch-site") === "cross-site"
+    ) {
+      throw new BackendError(403, "cross-origin-request");
+    }
+    if (req.method !== "GET" && req.headers.get("x-carebridge-request") !== "1") {
+      throw new BackendError(403, "request-header-required");
+    }
+    return configuredOrigin;
+  }
   let requestOrigin: URL;
   try { requestOrigin = new URL(`${url.protocol}//${host}`); }
   catch { throw new BackendError(403, "invalid-host"); }
@@ -32,6 +54,7 @@ function requestBoundary(req: Request, callback: boolean) {
     if ((origin && origin !== requestOrigin.origin) || req.headers.get("sec-fetch-site") === "cross-site") throw new BackendError(403, "cross-origin-request");
     if (req.method !== "GET" && req.headers.get("x-carebridge-request") !== "1") throw new BackendError(403, "request-header-required");
   }
+  return requestOrigin;
 }
 function sessionFrom(req: Request, db: BackendDatabase) {
   const cookies = req.headers.get("cookie") ?? "";
@@ -58,19 +81,25 @@ export async function handleBackend(req: Request, path: string[], database?: Bac
   try {
     const endpoint = path.join("/");
     const callback = endpoint === "fitbit/callback" && req.method === "GET";
-    requestBoundary(req, callback);
+    const requestOrigin = requestBoundary(req, callback);
     const db = database ?? getDatabase();
     const fitbit = fitbitService ?? new FitbitService(db);
     if (endpoint === "session" && req.method === "POST") {
       let existing: Session | undefined;
       try { existing = sessionFrom(req, db); } catch { /* expired -> new controlled session */ }
+      if (existing && publicDemoEnabled() && existing.userId !== "alex-demo") {
+        existing = db.switchProfile(existing, "alex-demo");
+      }
       if (existing) return json(profileInfo(existing), 200, existing);
-      const created = db.createSession();
+      const created = db.createSession(publicDemoEnabled() ? "alex-demo" : "personal");
       const response = json(profileInfo(created.session), 201, created.session);
-      response.cookies.set(cookieName, created.token, { httpOnly: true, sameSite: "lax", secure: new URL(req.url).protocol === "https:", path: "/api/backend", maxAge: 12*3600 });
+      response.cookies.set(cookieName, created.token, { httpOnly: true, sameSite: "lax", secure: requestOrigin.protocol === "https:", path: "/api/backend", maxAge: 12*3600 });
       return response;
     }
-    const session = sessionFrom(req, db);
+    let session = sessionFrom(req, db);
+    if (publicDemoEnabled() && session.userId !== "alex-demo") {
+      session = db.switchProfile(session, "alex-demo");
+    }
     if (endpoint === "session" && req.method === "GET") return json(profileInfo(session), 200, session);
     if (callback) {
       const url = new URL(req.url);
@@ -85,12 +114,16 @@ export async function handleBackend(req: Request, path: string[], database?: Bac
     if (req.headers.get("x-carebridge-context") !== contextKey(session)) throw new BackendError(409, "profile-context-required-or-stale");
     if (endpoint === "profile" && req.method === "POST") {
       const input = z.object({ userId: ProfileId }).strict().parse(await body(req));
+      if (!runtimeProfiles().some((profile) => profile.id === input.userId)) {
+        throw new BackendError(403, "profile-not-available");
+      }
       const switched = db.switchProfile(session, input.userId);
       return json(profileInfo(switched), 200, switched);
     }
-    const store = new ProfileStore(db, session.userId);
-    const documents = new DocumentStore(db, session.userId);
-    const run = <T>(fn: () => T) => db.inSession(session, fn);
+    const profileDb = getProfileDatabase(session, db);
+    const store = new ProfileStore(profileDb, session.userId);
+    const documents = new DocumentStore(profileDb, session.userId);
+    const run = <T>(fn: () => T) => db.inSession(session, () => profileDb === db ? fn() : profileDb.transaction(fn));
     // Import can initialize an unseeded demo from its exact legacy snapshot.
     if (endpoint !== "demo/import") run(() => store.ensureDemo());
     if (req.method === "GET") {

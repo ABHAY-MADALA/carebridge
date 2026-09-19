@@ -32,6 +32,33 @@ export function ProfileSwitcher({
     };
   }, [open]);
 
+  if (profiles.length === 1) {
+    return (
+      <div
+        className={cn(
+          "flex w-full items-center gap-2.5 rounded-lg text-left",
+          compact ? "min-h-[44px] px-2 py-1.5" : "px-2 py-2",
+        )}
+        aria-label={`${profile.name}, public demo with synthetic data`}
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-semibold text-brand">
+          {profile.name.charAt(0)}
+        </span>
+        {!compact && (
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold text-ink">
+              {profile.name}
+            </span>
+            <span className="block truncate text-xs text-muted">
+              Public demo · Synthetic
+            </span>
+          </span>
+        )}
+        <FlaskConical className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+      </div>
+    );
+  }
+
   return (
     <div ref={root} className="relative">
       <button

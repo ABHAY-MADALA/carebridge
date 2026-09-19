@@ -651,13 +651,23 @@ Everything is optional; see `.env.local.example`. What degrades without each:
 | `ELEVENLABS_VOICE_ID` | A default voice is used. |
 | `ELEVENLABS_CLINICAL_VOICE_ID` | Recognized but unused — HealthThread uses one voice (`ELEVENLABS_VOICE_ID`) everywhere. |
 | `GOOGLE_HEALTH_CLIENT_ID` / `GOOGLE_HEALTH_CLIENT_SECRET` / `CAREBRIDGE_FITBIT_REDIRECT_URI` | Personal shows "Setup required." Alex remains synthetic-only. |
+| `HEALTHTHREAD_PUBLIC_DEMO=1` | Enables the Alex-only public demo. When unset, the existing local Personal + Alex behavior is unchanged. |
+| `HEALTHTHREAD_PUBLIC_ORIGIN` | Exact allowed public origin. Optional on Render because `RENDER_EXTERNAL_URL` is supplied there; required for another host or custom domain. |
 
 ## Hosting
 
-Local-only at the user's request (September 19, 2026). The current production
-build runs from `/Users/madalaabhay/Documents/CAREBRIDGE` at
-`http://localhost:3000`, bound to `127.0.0.1`; the home route returned HTTP 200.
-Start it with `npm run start -- --hostname 127.0.0.1 --port 3000` after building.
+Private mode remains local-only. The current production build runs from
+`/Users/madalaabhay/Documents/CAREBRIDGE` at `http://localhost:3000`, bound to
+`127.0.0.1`. Start it with
+`npm run start -- --hostname 127.0.0.1 --port 3000` after building.
+
+An uncommitted public-demo mode was added September 19, 2026 for review before
+deployment. `HEALTHTHREAD_PUBLIC_DEMO=1` exposes only Alex, uses an in-memory
+session database plus a capped per-session in-memory profile database, and
+binds requests to `HEALTHTHREAD_PUBLIC_ORIGIN` or `RENDER_EXTERNAL_URL`.
+Abhay remains in private mode and `.carebridge-data` is never read in public
+mode. `render.yaml` is preparation only: nothing has been deployed, committed,
+or pushed. Run `scripts/verify-public-demo.ts` through `npm run verify`.
 
 The user explicitly requested removal of the outdated Vercel preview. Deployment
 `dpl_AQwzm6orHH8o1VMHLz4EsM6JDo75`
@@ -684,10 +694,13 @@ npm run rehearse     # walks the demo script against a running dev server
 
 ## Deliberate shortcuts — do not "fix" these
 
-- **Local SQLite and controlled sessions, not production auth.** This is a
-  two-profile hackathon boundary for one trusted local machine. Never expose it
-  on a LAN or public deployment. Production needs real authentication,
-  authorization and encrypted managed storage.
+- **Local SQLite and controlled sessions, not production auth.** Private mode is
+  a two-profile hackathon boundary for one trusted local machine and must never
+  be exposed on a LAN or public deployment. Public mode is a separate,
+  synthetic-only judge experience: Alex only, no persistent records, no real
+  OAuth/uploads, an exact allowed origin, and isolated visitor state. It is not
+  a production patient service. Real patient hosting still needs authentication,
+  authorization, audit controls, consent workflows, and encrypted managed storage.
 - **Exactly two profiles.** Personal and Alex are not a general multi-user,
   caregiver, family or dependent system.
 - **The backend database is not encrypted at rest by this app.** It is

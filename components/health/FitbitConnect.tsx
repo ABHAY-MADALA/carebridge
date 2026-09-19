@@ -184,7 +184,7 @@ export function FitbitConnect() {
         <>
           <p className="mt-2 text-base text-muted">
             Connect your real account to import supported sleep, steps and resting-heart-
-            rate measurements into Abhay&apos;s Personal profile only.
+            rate measurements into your Personal profile only.
           </p>
           <button
             type="button"

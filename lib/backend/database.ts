@@ -3,6 +3,7 @@ import { mkdirSync, openSync, closeSync, chmodSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { createHash, randomBytes } from "node:crypto";
 import { ProfileId, BackendError } from "./schema";
+import { publicDemoEnabled } from "./runtime";
 
 export type Session = { key: string; userId: ProfileId; revision: number; expiresAt: number };
 const hash = (token: string) => createHash("sha256").update(token).digest("hex");
@@ -60,9 +61,10 @@ export class BackendDatabase {
     try { const result = fn(); this.sql.exec("COMMIT"); return result; }
     catch (error) { this.sql.exec("ROLLBACK"); throw error; }
   }
-  createSession(): { token: string; session: Session } {
+  createSession(defaultProfile: ProfileId = "personal"): { token: string; session: Session } {
     const token = randomBytes(32).toString("hex");
-    const session = { key: hash(token), userId: "personal" as const, revision: 1, expiresAt: Date.now() + 12 * 3600000 };
+    const session = { key: hash(token), userId: ProfileId.parse(defaultProfile), revision: 1, expiresAt: Date.now() + 12 * 3600000 };
+    this.sql.prepare("DELETE FROM sessions WHERE expires_at<=?").run(Date.now());
     this.sql.prepare("INSERT INTO sessions VALUES (?,?,?,?)").run(session.key, session.userId, session.revision, session.expiresAt);
     return { token, session };
   }
@@ -92,5 +94,44 @@ export class BackendDatabase {
 
 let database: BackendDatabase | undefined;
 export function getDatabase() {
-  return database ??= new BackendDatabase(process.env.CAREBRIDGE_DATABASE_PATH ?? resolve(process.cwd(), ".carebridge-data/carebridge.sqlite"));
+  return database ??= new BackendDatabase(publicDemoEnabled() ? ":memory:" : process.env.CAREBRIDGE_DATABASE_PATH ?? resolve(process.cwd(), ".carebridge-data/carebridge.sqlite"));
+}
+
+type PublicProfileDatabase = { database: BackendDatabase; expiresAt: number };
+const publicProfileDatabases = new Map<string, PublicProfileDatabase>();
+const MAX_PUBLIC_DEMO_SESSIONS = 100;
+
+/** Each public visitor receives an isolated, temporary copy of Alex's data. */
+export function getProfileDatabase(session: Session, sessionDatabase: BackendDatabase) {
+  if (!publicDemoEnabled()) return sessionDatabase;
+
+  const now = Date.now();
+  for (const [key, entry] of publicProfileDatabases) {
+    if (entry.expiresAt <= now) {
+      entry.database.close();
+      publicProfileDatabases.delete(key);
+    }
+  }
+
+  const existing = publicProfileDatabases.get(session.key);
+  if (existing) {
+    existing.expiresAt = session.expiresAt;
+    publicProfileDatabases.delete(session.key);
+    publicProfileDatabases.set(session.key, existing);
+    return existing.database;
+  }
+
+  if (publicProfileDatabases.size >= MAX_PUBLIC_DEMO_SESSIONS) {
+    const oldestKey = publicProfileDatabases.keys().next().value as string | undefined;
+    if (oldestKey) {
+      publicProfileDatabases.get(oldestKey)?.database.close();
+      publicProfileDatabases.delete(oldestKey);
+    }
+  }
+  const created = new BackendDatabase(":memory:");
+  publicProfileDatabases.set(session.key, {
+    database: created,
+    expiresAt: session.expiresAt,
+  });
+  return created;
 }

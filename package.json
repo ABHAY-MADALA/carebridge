@@ -6,9 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "preview:public": "node scripts/start-public-demo.mjs",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "verify": "tsx scripts/verify-engine.ts && tsx scripts/verify-fallback.ts && tsx scripts/verify-guards.ts && tsx scripts/verify-advocate.ts && tsx scripts/verify-ui-fixes.ts && tsx scripts/verify-ai-import.ts && tsx scripts/verify-profile-backend.ts && tsx scripts/verify-profile-api.ts && tsx scripts/verify-profile-frontend.ts && tsx scripts/verify-merged-profiles.ts",
+    "verify": "tsx scripts/verify-engine.ts && tsx scripts/verify-fallback.ts && tsx scripts/verify-guards.ts && tsx scripts/verify-advocate.ts && tsx scripts/verify-ui-fixes.ts && tsx scripts/verify-ai-import.ts && tsx scripts/verify-profile-backend.ts && tsx scripts/verify-profile-api.ts && tsx scripts/verify-profile-frontend.ts && tsx scripts/verify-merged-profiles.ts && tsx scripts/verify-public-demo.ts",
     "check-voice": "tsx scripts/check-voice.ts",
     "rehearse": "tsx scripts/rehearse.ts",
     "rehearse:profiles": "tsx scripts/rehearse-profiles.ts"
