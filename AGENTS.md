@@ -45,6 +45,24 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
+### Synced Personal/Alex profiles on Windows (September 19, 2026)
+
+Fast-forwarded local `main` to GitHub commit `6ae859e`, which includes the
+profile-scoped backend and HealthThread rename. The app now exposes **Abhay —
+Personal** and **Alex — Demo Patient** through the real profile switcher. A live
+local API check confirmed that Abhay is Fitbit-eligible, Alex retains 84
+synthetic daily records and 12 events, and Alex cannot connect a real Fitbit.
+
+This Windows host runs Node 22.12 without the optional `node:sqlite` builtin, so
+the database adapter now uses `better-sqlite3` 12.4.1 with the same synchronous,
+profile-scoped SQL contract and transaction boundaries. All nine verification
+suites, typecheck, and the production build pass, and the refreshed build is
+running on `127.0.0.1:3000`. This checkout has no `.env.local` or copied OAuth
+tokens/patient records, so Abhay correctly shows Fitbit setup required here;
+GitHub commits do not transfer private Fitbit authorization or health data. The
+pre-sync wording changes remain preserved in `stash@{0}`. Do not push without
+user authorization.
+
 ### HealthThread branding / Calm View merge (September 19, 2026)
 
 Merged incoming `3e3a8c9` (HealthThread branding) and `4a18ff9` (Calm View)

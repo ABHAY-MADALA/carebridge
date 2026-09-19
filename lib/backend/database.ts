@@ -1,4 +1,4 @@
-import { DatabaseSync } from "node:sqlite";
+import Database from "better-sqlite3";
 import { mkdirSync, openSync, closeSync, chmodSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { createHash, randomBytes } from "node:crypto";
@@ -7,17 +7,29 @@ import { ProfileId, BackendError } from "./schema";
 export type Session = { key: string; userId: ProfileId; revision: number; expiresAt: number };
 const hash = (token: string) => createHash("sha256").update(token).digest("hex");
 
+type SqlRow = Record<string, unknown>;
+type SqlStatement = {
+  run: (...params: unknown[]) => { changes: number | bigint };
+  get: (...params: unknown[]) => SqlRow | undefined;
+  all: (...params: unknown[]) => SqlRow[];
+};
+type SqlDatabase = {
+  exec: (source: string) => unknown;
+  prepare: (source: string) => SqlStatement;
+  close: () => void;
+};
+
 /** Local single-host storage. SQLite transactions also serialize separate Node
  * workers; no process-global active user or read-all-health-data method exists. */
 export class BackendDatabase {
-  readonly sql: DatabaseSync;
+  readonly sql: SqlDatabase;
   constructor(filename: string) {
     if (filename !== ":memory:") {
       mkdirSync(dirname(filename), { recursive: true, mode: 0o700 });
       closeSync(openSync(filename, "a", 0o600));
       chmodSync(filename, 0o600);
     }
-    this.sql = new DatabaseSync(filename);
+    this.sql = new Database(filename) as unknown as SqlDatabase;
     this.sql.exec(`PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL;
       CREATE TABLE IF NOT EXISTS profiles (id TEXT PRIMARY KEY CHECK(id IN ('personal','alex-demo')));
       INSERT OR IGNORE INTO profiles VALUES ('personal'), ('alex-demo');
