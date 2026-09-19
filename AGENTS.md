@@ -45,6 +45,25 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
+### Live Fitbit import correction (September 19, 2026)
+
+Personal Google authorization and resting-heart-rate sync now work. The live
+provider rejected the old step page size and some month-long rollups; steps now
+use contiguous seven-day query ranges with independent pagination and page size
+seven. A failed chunk discards partial results for that metric. Live sleep sessions
+omitted `civilEndTime`; the importer now derives the patient's wake-up date from
+`endTime` and explicit `endUtcOffset`, preserving civil dates when supplied and
+refusing to guess missing offsets. Daily sleep still aggregates unique sessions.
+No frontend changes or automatic patient-data writes were made. Read-only live
+adapter checks returned steps, sleep and resting HR with no unavailable types.
+The user must click Sync now to import the corrected results. Regression coverage
+includes civil/UTC/offset boundaries, invalid timing, duplicate sleep sessions,
+cross-year step chunks, per-chunk pagination, failed chunks, auth and page limits.
+All nine verification suites (including 17 API/OAuth groups), standalone typecheck,
+production build and diff whitespace checks passed. The updated production build
+was restarted on loopback port 3000. The user requested a local commit of this
+backend fix; no push or public deployment is authorized.
+
 ### Integrated GitHub UI and local profiles (September 19, 2026)
 
 Merged the navigation/records/body-capture updates through `3fad75d` with the
@@ -276,18 +295,12 @@ browser storage. The localhost patient record was not used for test saves.
 
 **Nothing is in progress**, except one external step only the human can do:
 
-1. **Finish the Google Cloud Console side of Fitbit and hand over credentials.**
-   `lib/backend/fitbit*.ts` / `app/api/backend/[...path]/route.ts` are built and pass every
-   automated check, but nobody has run the OAuth flow against a real Google
-   account yet. Whoever does: create a Cloud project, enable the Health API,
-   add yourself as a test user (Testing status, not verified — fine for a
-   demo), generate a Web Server OAuth client, and register exactly
-   `http://localhost:3000/api/backend/fitbit/callback`. Add
-   `GOOGLE_HEALTH_CLIENT_ID`, `GOOGLE_HEALTH_CLIENT_SECRET`, and
-   `CAREBRIDGE_FITBIT_REDIRECT_URI` to `.env.local`, restart, and complete
-   Connect → callback → sync → compare with the wearable app → disconnect →
-   reconnect. Current backend status is `configured:false`, `connected:false`;
-   no connection or data is fabricated.
+1. **Finish live Fitbit validation.** Google Cloud credentials are configured
+   locally and Personal authorization/resting-HR import succeeded. Read-only
+   checks of the corrected steps/sleep adapter also succeeded. Next: the user
+   clicks Sync now, compares imported values with the wearable app, and tests
+   disconnect/reconnect. Token refresh still needs live verification. Keep
+   credentials private; never log tokens or include patient records in fixtures.
 2. **English → patient-language summary.** Input translation works (Spanish in,
    English preserved alongside the original). The reverse — reading the finished
    summary back in Spanish — only works when an LLM key is present; there is no
@@ -604,10 +617,9 @@ npm run rehearse     # walks the demo script against a running dev server
   `lib/ai/prompts.ts`, not something this task's changes touch or fix; the
   fallback path (the one AGENTS.md treats as defensible) is unaffected —
   confirmed by rehearsing once with `.env.local` renamed, which passes clean.
-- **Fitbit-via-Google-Health is built but not yet run against a real Google
-  account.** Current Personal status is `configured:false`, `connected:false`.
-  The OAuth+PKCE, normalization and race handling pass injected-fixture tests,
-  but the callback/token refresh/provider response still need a live account.
+- **Fitbit live QA is partial.** Personal OAuth and resting-HR import succeeded;
+  corrected steps/sleep fetch and normalization passed read-only live checks.
+  Physical device comparison, token refresh and disconnect/reconnect remain.
   Testing-mode OAuth tokens expire in 7 days, so "reauth required" is expected.
 - **The realistic body is a communication aid, not a medical segmentation model.**
   Surface hit tests map to broad canonical regions using local coordinates and

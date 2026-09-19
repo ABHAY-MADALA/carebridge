@@ -188,9 +188,13 @@ grant. The user can revoke that separately in Google account permissions.
 The new provider parser uses documented fields rather than the old generic
 `Object.values(value)[0]` assumption:
 
-- Steps: daily rollup `steps.countSum`, including a genuine zero.
+- Steps: daily rollup `steps.countSum`, including a genuine zero. Fetch contiguous
+  seven-day ranges with page size seven and independent pagination per range.
+  A failed chunk discards that metric's partial response, not historical records.
 - Sleep: reconciled sleep-session `summary.minutesAsleep`, aggregated by the
-  session's civil end date; original interval timestamps and provider IDs retained.
+  session's civil end date. If the civil field is absent, derive the wake-up date
+  from `endTime` plus the explicit `endUtcOffset`, never the server timezone.
+  Missing/invalid timing is omitted; original timestamps and provider IDs remain.
 - Resting HR: reconciled `dailyRestingHeartRate.beatsPerMinute`, not the rollup's
   personal min/max range.
 
@@ -198,8 +202,12 @@ Date-only observations remain date-only; no measurement timestamp is invented.
 Requests select the Google wearable source family, follow pagination, cap requests,
 and omit unsupported fields. Source `fitbit` denotes this Fitbit/Google Health
 wearable integration, not proof of a particular device model. No mock connector
-exists in production. Live authorization/sync with the user's device is **not
-verified**; tests inject explicitly isolated fixtures, never fake a real connection.
+exists in production. Live Google authorization and resting-heart-rate sync were
+confirmed on September 19, 2026. Read-only checks of the corrected adapter returned
+all three metric types with no unavailable types. The check did not save records;
+the user must use Sync now to import them. Physical device/app value comparison,
+token refresh, and disconnect/reconnect still need live QA. Automated tests use
+isolated synthetic fixtures, never copied patient values or credentials.
 
 Reference checked during implementation:
 [dailyRollUp](https://developers.google.com/health/reference/rest/v4/users.dataTypes.dataPoints/dailyRollUp),
