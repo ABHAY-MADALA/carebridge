@@ -126,10 +126,135 @@ html[data-density="calm"] [data-density-hide] {
   display: none !important;
 }
 
+html[data-density="calm"] body {
+  background-image: none;
+}
+
+html[data-density="calm"] .top-nav-shell,
+html[data-density="calm"] .side-nav-card,
+html[data-density="calm"] .card,
+html[data-density="calm"] .disclosure-card,
+html[data-density="calm"] .health-snapshot,
+html[data-density="calm"] .change-banner,
+html[data-density="calm"] .records-card,
+html[data-density="calm"] .btn-primary {
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
 html[data-density="calm"] .card + .card,
 html[data-density="calm"] section + section {
   margin-top: 3rem;
 }
+
+.calm-view-strip {
+  position: sticky;
+  top: 76px;
+  z-index: 45;
+  border-bottom: 1px solid rgb(var(--brand) / .3);
+  background: rgb(var(--brand-soft) / .97);
+}
+
+.calm-view-strip-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 1660px;
+  min-height: 48px;
+  margin: 0 auto;
+  padding: 7px 28px;
+  color: rgb(var(--ink));
+}
+
+.calm-view-strip-inner > svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: rgb(var(--brand));
+}
+
+.calm-view-strip-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.calm-view-strip-copy strong { font-size: .875rem; }
+.calm-view-strip-copy small { color: rgb(var(--muted)); font-size: .75rem; }
+.calm-view-strip button {
+  flex: 0 0 auto;
+  border-bottom: 1px solid currentColor;
+  color: rgb(var(--ink));
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+html[data-density="calm"] .app-side-nav {
+  top: 9.25rem;
+  max-height: calc(100vh - 10.75rem);
+}
+
+html[data-density="calm"] .side-nav-card {
+  max-height: calc(100vh - 10.75rem);
+}
+
+.calm-details {
+  overflow: hidden;
+  border: 1px solid rgb(var(--line));
+  border-radius: 14px;
+  background: rgb(var(--surface));
+}
+
+.calm-details > summary {
+  display: flex;
+  min-height: 52px;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  color: rgb(var(--ink));
+  font-weight: 700;
+}
+
+.calm-details > summary::-webkit-details-marker { display: none; }
+.calm-details > summary::after {
+  content: "+";
+  color: rgb(var(--muted));
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+.calm-details[open] > summary::after { content: "−"; }
+.calm-details-content { border-top: 1px solid rgb(var(--line)); padding: 16px; }
+
+.calm-editor-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+
+.calm-editor-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  color: rgb(var(--ink));
+  font-size: .8125rem;
+  font-weight: 700;
+}
+
+.calm-editor-toggle button:hover { background: rgb(var(--raised)); }
+.calm-editor-toggle svg { width: 16px; height: 16px; transition: transform var(--speed); }
+.calm-editor-toggle button[aria-expanded="true"] svg { transform: rotate(180deg); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -717,6 +842,8 @@ html[data-contrast="high"] .side-nav-card { border-width: 2px; box-shadow: none;
   .top-nav-mobile-actions { display: flex; }
   .top-nav-inner { min-height: 70px; padding: 0 20px; }
   .top-nav-brand-logo { width: 190px; height: 41px; }
+  .calm-view-strip { top: 70px; }
+  .calm-view-strip-inner { padding-left: 20px; padding-right: 20px; }
   .records-grid { grid-template-columns: 1fr; }
   .connection-card { position: static; }
 }
@@ -724,6 +851,9 @@ html[data-contrast="high"] .side-nav-card { border-width: 2px; box-shadow: none;
 @media (max-width: 767px) {
   .top-nav-inner { min-height: 66px; padding: 0 14px; }
   .top-nav-brand-logo { width: 146px; height: 32px; }
+  .calm-view-strip { top: 66px; }
+  .calm-view-strip-inner { padding-left: 14px; padding-right: 14px; }
+  .calm-view-strip-copy small { display: none; }
   .top-nav-mobile-actions { gap: 1px; }
   .top-nav-mobile-actions .theme-toggle { display: none; }
   .top-nav-mobile-actions .profile-avatar { width: 32px; height: 32px; }

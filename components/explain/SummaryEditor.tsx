@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Eye, EyeOff, Pencil, X } from "lucide-react";
+import { Check, ChevronDown, Eye, EyeOff, Pencil, X } from "lucide-react";
 import type { DoctorSummary, SummarySection } from "@/lib/schema";
 import { useT } from "@/components/a11y/useT";
 import { cn } from "@/lib/utils";
@@ -22,14 +22,18 @@ export function SummaryEditor({
   summary,
   onChange,
   disabled,
+  calmMode = false,
 }: {
   summary: DoctorSummary;
   onChange: (next: DoctorSummary) => void;
   disabled?: boolean;
+  calmMode?: boolean;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [buffer, setBuffer] = useState("");
+  const [showControls, setShowControls] = useState(false);
   const { t } = useT();
+  const controlsVisible = !calmMode || showControls || editingId !== null;
 
   const patch = (id: string, changes: Partial<SummarySection>) =>
     onChange({
@@ -48,6 +52,18 @@ export function SummaryEditor({
 
   return (
     <div className="divide-y divide-line rounded-2xl border border-line bg-surface">
+      {calmMode && (
+        <div className="calm-editor-toggle">
+          <button
+            type="button"
+            onClick={() => setShowControls((visible) => !visible)}
+            aria-expanded={showControls}
+          >
+            {showControls ? t("explain.hideEditingTools") : t("explain.reviewOrEdit")}
+            <ChevronDown aria-hidden />
+          </button>
+        </div>
+      )}
       {summary.sections.map((section) => {
         const editing = editingId === section.id;
 
@@ -56,7 +72,7 @@ export function SummaryEditor({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-semibold text-ink">{section.heading}</h3>
 
-              <div className="flex flex-wrap items-center gap-1">
+              {controlsVisible && <div className="flex flex-wrap items-center gap-1">
                 {section.included && !editing && (
                   <button
                     type="button"
@@ -77,7 +93,7 @@ export function SummaryEditor({
                 >
                   {section.included ? <EyeOff className="h-3.5 w-3.5" aria-hidden /> : <Eye className="h-3.5 w-3.5" aria-hidden />}
                 </button>
-              </div>
+              </div>}
             </div>
 
             {!section.included ? (
