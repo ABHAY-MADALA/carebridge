@@ -44,6 +44,8 @@ npm run check-voice                # what is configured, and ElevenLabs quota
 
 ### Public synthetic demo
 
+Live judge demo: **https://healththread-demo.onrender.com**
+
 The same codebase has two server-enforced modes:
 
 - Normal local mode keeps the existing **Abhay — Personal** and **Alex — Demo

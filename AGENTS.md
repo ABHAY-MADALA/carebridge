@@ -661,13 +661,17 @@ Private mode remains local-only. The current production build runs from
 `127.0.0.1`. Start it with
 `npm run start -- --hostname 127.0.0.1 --port 3000` after building.
 
-An uncommitted public-demo mode was added September 19, 2026 for review before
-deployment. `HEALTHTHREAD_PUBLIC_DEMO=1` exposes only Alex, uses an in-memory
-session database plus a capped per-session in-memory profile database, and
-binds requests to `HEALTHTHREAD_PUBLIC_ORIGIN` or `RENDER_EXTERNAL_URL`.
-Abhay remains in private mode and `.carebridge-data` is never read in public
-mode. `render.yaml` is preparation only: nothing has been deployed, committed,
-or pushed. Run `scripts/verify-public-demo.ts` through `npm run verify`.
+Public-demo mode was deployed to Render on September 19, 2026 at
+`https://healththread-demo.onrender.com` from commit `31cb210`. The Render
+Blueprint is `healththread-public-demo` (`exs-danh54ek1f9s738nhcbg`) and the
+free web service is `healththread-demo` (`srv-danh5lrtqb8s73bti0u0`).
+`HEALTHTHREAD_PUBLIC_DEMO=1` exposes only Alex, uses an in-memory session
+database plus a capped per-session in-memory profile database, and binds
+requests to `HEALTHTHREAD_PUBLIC_ORIGIN` or `RENDER_EXTERNAL_URL`. Browser QA
+confirmed Alex, 84 days, 12 events, five moved signals, and no Abhay profile in
+the rendered navigation. Abhay remains in private mode and `.carebridge-data`
+is never read in public mode. Run `scripts/verify-public-demo.ts` through
+`npm run verify`.
 
 The user explicitly requested removal of the outdated Vercel preview. Deployment
 `dpl_AQwzm6orHH8o1VMHLz4EsM6JDo75`
