@@ -1,12 +1,60 @@
 # HealthThread
 
-**An accessible AI health communication platform.** Patients explain what is
-happening however they can — speech, text, a body map, or plain forms —
-HealthThread organizes it into a health record, watches how it changes against
-*their own* baseline, and helps them communicate that story to a doctor.
+HealthThread is an accessible health communication app created during Bay Hacks
+2026. It helps people capture health experiences over time and communicate that
+information more clearly with healthcare providers. HealthThread won the
+**Nucleate Florida Healthcare Challenge** at Bay Hacks 2026.
 
-Built for BayHacks. PMOS, a cycle-linked condition, is the demonstration case,
-not the product's identity.
+Patients can describe experiences through speech, text, guided questions or a
+body map. HealthThread organizes patient-confirmed events into a timeline,
+helps people see changes relative to their own baseline, and prepares an
+editable summary for a provider conversation. It does not diagnose patients
+or replace healthcare professionals.
+
+**[Try the public synthetic demo](https://healththread-demo.onrender.com)**
+
+## The problem and the solution
+
+Patients may struggle to remember when a change started, describe symptoms in
+clinical language, or communicate during a short appointment. HealthThread
+supports multiple ways to capture a person's own account and helps organize
+that account into information they can review and share.
+
+## Core features
+
+- Speech, text, guided check-ins and a body-map interface for health entries.
+- Review and confirmation before an entry is saved; original wording is kept.
+- Timeline and changes compared with the person's own past patterns.
+- Editable, patient-approved summary and clinician-facing view.
+- English and Spanish interface; synthetic demo patient for the public site.
+
+## Bay Hacks 2026 and team
+
+HealthThread was created during Bay Hacks 2026 and won the **Nucleate Florida
+Healthcare Challenge**. PMOS, a cycle-linked condition, is one demonstration
+case, not the product's identity.
+
+| Contributor | Role | Contributions |
+| --- | --- | --- |
+| [Rufaida Afrin](https://github.com/rufaidaafrin) | Co-Creator, Product, Frontend & Security Engineering | Originated the HealthThread concept, developed the frontend, helped shape the product and user experience, and worked on security safeguards including a threat model, profile isolation, request protections, encrypted storage options, and security verification. |
+| [Abhay Madala](https://github.com/ABHAY-MADALA) | Co-Creator, Backend Development | Contributed to HealthThread's backend development and implementation. |
+
+Git commit counts do not represent the complete contribution of any team member.
+
+## Technology and architecture
+
+The repository uses Next.js App Router, React, TypeScript and Tailwind CSS for
+the web interface; Three.js and React Three Fiber for the body interface;
+SQLite via better-sqlite3 for local profile-scoped records; and Zod to validate
+structured outputs. The confirmation flow connects patient input to saved
+events, timelines, baseline comparisons and patient-approved summaries. The
+public deployment uses synthetic data and an in-memory demo backend.
+
+## Screenshots and demo
+
+The [live synthetic demo](https://healththread-demo.onrender.com) shows the
+interface. Repository assets include light and dark HealthThread logos in
+`public/brand/`; no application screenshots are currently included.
 
 ---
 
@@ -17,7 +65,7 @@ npm install
 npm run dev -- --hostname 127.0.0.1   # open http://localhost:3000
 ```
 
-HealthThread is local-only and uses a SQLite backend in `.carebridge-data`.
+Local development uses a SQLite backend in `.carebridge-data`.
 **Abhay — Personal** starts empty. **Alex — Demo Patient** receives the
 deterministic 84-day, three-cycle synthetic history on the first Alex health
 read. Every health query and write is bound to the active server session/profile;
