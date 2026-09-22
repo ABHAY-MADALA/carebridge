@@ -1,9 +1,8 @@
 # HealthThread
 
-HealthThread is an accessible health communication app created during Bay Hacks
-2026. It helps people capture health experiences over time and communicate that
-information more clearly with healthcare providers. HealthThread won the
-**Nucleate Florida Healthcare Challenge** at Bay Hacks 2026.
+HealthThread is an accessible health communication app built for the BayHacks
+2026 hackathon. It helps people capture health experiences over time and
+communicate that information more clearly with healthcare providers.
 
 Patients can describe experiences through speech, text, guided questions or a
 body map. HealthThread organizes patient-confirmed events into a timeline,
@@ -28,11 +27,10 @@ that account into information they can review and share.
 - Editable, patient-approved summary and clinician-facing view.
 - English and Spanish interface; synthetic demo patient for the public site.
 
-## Bay Hacks 2026 and team
+## BayHacks 2026 and team
 
-HealthThread was created during Bay Hacks 2026 and won the **Nucleate Florida
-Healthcare Challenge**. PMOS, a cycle-linked condition, is one demonstration
-case, not the product's identity.
+HealthThread was built for the BayHacks 2026 hackathon. PMOS, a cycle-linked
+condition, is one demonstration case, not the product's identity.
 
 | Contributor | Role | Contributions |
 | --- | --- | --- |
