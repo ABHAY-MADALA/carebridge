@@ -102,6 +102,34 @@ html[data-contrast="high"] .btn {
   border-width: 2px !important;
 }
 
+/* The clinician page doubles as the patient-approved paper/PDF handoff.
+   Interactive appointment controls stay on screen, while printing produces a
+   clean, light, legible summary regardless of the selected app theme. */
+@media print {
+  @page { margin: 0.55in; }
+
+  html,
+  html[data-theme="dark"],
+  html[data-contrast="high"] {
+    color-scheme: light;
+    --bg: 255 255 255;
+    --surface: 255 255 255;
+    --raised: 248 248 248;
+    --line: 190 190 190;
+    --ink: 20 20 20;
+    --muted: 72 72 72;
+    --brand: 54 54 54;
+    --brand-ink: 255 255 255;
+    --brand-soft: 245 245 245;
+  }
+
+  body { background: white !important; background-image: none !important; }
+  .print-hidden { display: none !important; }
+  #main { max-width: none !important; padding: 0 !important; }
+  .clinician-summary-page { max-width: none !important; }
+  .clinician-summary-page section { break-inside: avoid; }
+}
+
 /* Low stimulation: no motion, no decorative gradients. */
 html[data-motion="reduced"] *,
 html[data-motion="reduced"] *::before,

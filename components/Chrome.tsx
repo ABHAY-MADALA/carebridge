@@ -34,7 +34,7 @@ export function Chrome({ children }: { children: React.ReactNode }) {
   if (clinician) {
     return (
       <>
-        <header className="border-b-2 border-line bg-surface">
+        <header className="print-hidden border-b-2 border-line bg-surface">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
             <div>
               <p className="label">{t("clinician.patientGenerated")}</p>

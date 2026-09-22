@@ -8,6 +8,7 @@ import { useSpeaker } from "@/components/voice/useSpeaker";
 import { VoiceAdvocate } from "@/components/clinician/VoiceAdvocate";
 import { QuickPhrases } from "@/components/clinician/QuickPhrases";
 import { DoctorSpeaks } from "@/components/clinician/DoctorSpeaks";
+import { ShareSummary } from "@/components/clinician/ShareSummary";
 import { HealthMetric } from "@/components/ui/HealthMetric";
 import { useT } from "@/components/a11y/useT";
 import { useProfile } from "@/components/profile/ProfileProvider";
@@ -72,7 +73,7 @@ export default function ClinicianPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <div className="clinician-summary-page mx-auto max-w-3xl space-y-8">
       <header className="border-b border-line pb-5">
         <p className="label">{t("clinician.patientGenerated")}</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-[1.75rem]">
@@ -88,7 +89,7 @@ export default function ClinicianPage() {
 
       {/* Whatever is being spoken is always on screen, with who is speaking. */}
       {speech.spokenText && (
-        <section aria-live="polite" className="rounded-2xl border border-brand/40 bg-brand-soft p-5">
+        <section aria-live="polite" className="print-hidden rounded-2xl border border-brand/40 bg-brand-soft p-5">
           <p className="label flex items-center gap-2">
             <Volume2 className="h-4 w-4" aria-hidden />
             {t("clinician.speaking")}
@@ -102,7 +103,7 @@ export default function ClinicianPage() {
         </section>
       )}
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="print-hidden flex flex-wrap items-center gap-4">
         <button
           type="button"
           className="btn btn-lg btn-primary"
@@ -129,6 +130,8 @@ export default function ClinicianPage() {
           />
         </label>
       </div>
+
+      <ShareSummary />
 
       {/* --- The summary, section by section, each replayable -------------- */}
       <section aria-labelledby="summary-heading" className="border-t border-line pt-8">
@@ -218,7 +221,7 @@ export default function ClinicianPage() {
         </section>
       )}
 
-      <div className="divide-y divide-line border-t border-line [&>*]:pt-8 [&>*:first-child]:pt-8">
+      <div className="print-hidden divide-y divide-line border-t border-line [&>*]:pt-8 [&>*:first-child]:pt-8">
         <VoiceAdvocate speech={speech} />
         <QuickPhrases speech={speech} />
         <DoctorSpeaks speech={speech} />

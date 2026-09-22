@@ -45,6 +45,32 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
+### Patient-approved PDF and secure-fax demonstration (September 22, 2026)
+
+The approved Show My Doctor screen now includes a patient-controlled sharing
+panel. Patients can open the device print dialog to print the approved summary
+or save it as a PDF for a clinic portal. Print styles force a clean light
+document and omit navigation, speaking controls, delivery controls and the live
+doctor interaction tools while retaining the approved summary, measurements,
+patient quotes and the patient-generated/not-a-diagnosis context.
+
+The same panel provides an explicitly simulated secure-fax flow for the public
+demo. It collects a clinic name, optional recipient and fax number only in React
+memory, displays the destination back to the patient, requires an explicit
+approval checkbox, and ends with an unambiguous statement that no fax was sent
+and no information left the browser. There is no fetch call, fax API, storage,
+delivery claim or HIPAA-compliance claim. Direct-to-EHR delivery is disclosed as
+future work requiring a verified HISP and clinic Direct address. English and
+Spanish UI copy ship together.
+
+Focused assertions prove that printing is available, the fax demo has consent
+and honest status states, and no network request exists. The full verification
+suite, typecheck, diff checks and an isolated production build pass. Live
+browser QA on the synthetic Alex profile covered summary generation/approval,
+phone-width layout, destination review, consent gating and the completed demo
+state. The local changes are intentionally uncommitted and unpushed pending the
+user's review.
+
 ### Broad guided histories for ongoing care (September 22, 2026)
 
 Guided Check-In starts with four focused, one-question-at-a-time paths: period

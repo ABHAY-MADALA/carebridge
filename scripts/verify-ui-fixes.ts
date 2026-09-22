@@ -109,6 +109,19 @@ for (const lang of ["en", "es"] as const) assert.ok(messages[lang].nav.guidedChe
 assert.equal(messages.en.nav.tell, "Talk or type");
 assert.equal(messages.en.nav.insights, "Health Changes");
 assert.equal(messages.en.nav.explain, "Help Me Explain");
+for (const lang of ["en", "es"] as const) {
+  assert.ok(messages[lang].clinician.printPdf);
+  assert.ok(messages[lang].clinician.tryFax);
+  assert.ok(messages[lang].clinician.faxConsent);
+  assert.ok(messages[lang].clinician.faxCompleteBody);
+}
+const shareSummarySource = readFileSync("components/clinician/ShareSummary.tsx", "utf8");
+assert.match(shareSummarySource, /window\.print\(\)/, "approved summary can open the native print or PDF flow");
+assert.match(shareSummarySource, /type="checkbox"[\s\S]*?faxConsent/, "fax demo requires explicit destination approval");
+assert.match(shareSummarySource, /FaxPhase = "idle" \| "preparing" \| "complete"/, "fax demo exposes an honest simulated status flow");
+assert.doesNotMatch(shareSummarySource, /\bfetch\s*\(/, "fax demo must not transmit health information");
+assert.match(readFileSync("app/clinician/page.tsx", "utf8"), /<ShareSummary \/>/);
+assert.match(readFileSync("app/globals.css", "utf8"), /@media print[\s\S]*?\.print-hidden/);
 const aiInboxSource = readFileSync("components/health/AIConversationInbox.tsx", "utf8");
 assert.match(aiInboxSource, /Live AI connections · Planned/);
 assert.match(aiInboxSource, /The live connection is not active in this local demo/);
