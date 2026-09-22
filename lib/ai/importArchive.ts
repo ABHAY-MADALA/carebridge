@@ -16,7 +16,7 @@ type ExtractedMessage = {
   conversationTitle: string | null;
 };
 
-const HEALTH_WORDS = /\b(?:pain|painful|hurt|hurts|hurting|ache|aching|sore|cramp|headache|migraine|tired|fatigue|exhausted|sleep|slept|insomnia|fever|chills|nausea|nauseous|vomit|dizzy|lightheaded|period|menstrual|bleeding|spotting|medicine|medication|pill|appetite|rash|swelling|swollen|tingling|numb|cough|breathing|symptom|doctor|hospital|duele|dolor|cansad[oa]|fatiga|dorm[ií]|fiebre|n[aá]usea|mareo|regla|medicamento)\b/i;
+const HEALTH_WORDS = /\b(?:pain|painful|hurt|hurts|hurting|ache|aching|sore|cramp|headache|migraine|tired|fatigue|exhausted|sleep|slept|insomnia|fever|chills|nausea|nauseous|vomit|dizzy|lightheaded|period|menstrual|bleeding|spotting|urine|urinary|urination|bladder|pee|bowel|stool|constipation|diarrhea|medicine|medication|pill|appetite|rash|swelling|swollen|tingling|numb|cough|breathing|symptom|doctor|hospital|duele|dolor|cansad[oa]|fatiga|dorm[ií]|fiebre|n[aá]usea|mareo|regla|orina|vejiga|evacuaci[oó]n|heces|estre[ñn]imiento|diarrea|medicamento)\b/i;
 
 export const AI_PROVIDER_LABELS: Record<AIProvider, string> = {
   chatgpt: "ChatGPT",

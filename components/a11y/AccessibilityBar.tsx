@@ -4,12 +4,11 @@ import { Contrast, Languages, Minus, Plus, Sparkles, Volume2 } from "lucide-reac
 import { cn } from "@/lib/utils";
 import { TextSize, useSettings } from "./SettingsProvider";
 import { useT } from "./useT";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const SIZES: TextSize[] = ["sm", "base", "lg", "xl"];
 
 /*
-  The actual accessibility toggles — theme, text size, contrast, low
+  The accessibility settings — text size, contrast, low
   stimulation, read aloud, language. Laid out horizontally (the old full-width top bar,
   kept for any narrow embedded use) or vertically (AccessibilityPanel, the
   sidebar-triggered popover that replaced the top bar as the app shell's
@@ -32,8 +31,6 @@ export function AccessibilityControls({ layout = "horizontal" }: { layout?: "hor
       role="group"
       aria-label={t("a11yBar.heading")}
     >
-      {vertical && <ThemeToggle full />}
-
       <div className={cn("flex items-center gap-1 rounded-xl border border-line bg-surface p-1", vertical && "self-start")}>
         <button
           type="button"

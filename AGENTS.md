@@ -45,6 +45,46 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
+### Broad guided histories for ongoing care (September 22, 2026)
+
+Guided Check-In starts with four focused, one-question-at-a-time paths: period
+or bleeding, bladder or urination, bowel movements, and an ongoing condition or
+treatment. Period history
+captures the type of change, exact start date when known, flow, duration,
+comparison with usual, clot size, related symptoms, optional pregnancy context
+and the patient's own note. Bladder history captures burning, frequency,
+urgency, output or emptying problems, leakage, inability to urinate, urine
+appearance, lower-abdominal or back/side symptoms, fever/chills, nausea,
+severity and optional pregnancy context. Bowel history captures constipation,
+diarrhea, frequency, urgency, incomplete emptying, leakage, stool appearance,
+blood/black stool/mucus, related symptoms and severity.
+
+The ongoing-care path keeps the choice screen compact, then branches into
+tailored prompts for heart/circulation, breathing/lung conditions,
+diabetes/blood sugar, cancer care or treatment effects, hormones/PCOS,
+joints/arthritis/mobility, memory/balance/vision/hearing, kidney/fluid changes,
+or another condition. Each branch records onset, changes the person noticed,
+effect on their usual day, medicine/treatment/routine context, optional device
+measurements, and their own note. This coverage follows the WHO's major global
+NCD groups plus CDC/NIA priorities for U.S. adults and aging, while NCI, NHLBI,
+CDC diabetes, NICHD PCOS, and AHA symptom-tracking material informed the branch
+details. It does not claim comprehensive disease management.
+
+The interface keeps one question visible at a time, permits optional questions
+to be skipped, supports English and Spanish, presents a complete review, and
+saves only after explicit confirmation. Selected wording and free text remain
+in `originalInput`. A supplied past date becomes the event's occurrence date;
+future dates are refused by the shared event factory. `urinary` and `bowel` are
+first-class event categories used by the assistant fallback, AI schema, archive
+import, summaries and grounded doctor Q&A rather than being hidden under Other.
+
+The prompts are based on history elements described by ACOG and NIDDK, but the
+product boundary is unchanged: HealthThread organizes clinician-relevant
+details and never names, narrows or suggests a diagnosis. The focused
+`verify:guided-history` suite covers all four entry paths, representative heart,
+cancer-care, PCOS and older-adult branches, Spanish wording, past-date
+preservation, typed symptom recognition, review and confirmation.
+
 ### Personal-fork security hardening (September 22, 2026)
 
 This work exists only in `rufaidaafrin/HEALTH-THREAD`; the organization
@@ -78,12 +118,11 @@ and no formal penetration test or compliance assessment has occurred.
 
 ### Mobile theme and navigation parity (September 22, 2026)
 
-Phone layouts now retain the compact header without losing theme access: the
-Accessibility settings panel includes a full-width Light mode / Dark mode
-control, while the direct header shortcut remains hidden below 768px to avoid
-crowding the logo, profile and menu controls. The CSS selectors that compact or
-hide the direct desktop/tablet shortcut are scoped to direct children so they do
-not accidentally hide the control inside Settings.
+Phone layouts now keep the Light mode / Dark mode control directly beside the
+Settings button, matching desktop and tablet. Settings contains the remaining
+accessibility controls without duplicating theme. The direct shortcut stays
+visible below 768px, with tighter logo and button sizing at 360px and narrower
+so the compact header still fits.
 
 The compact phone navigation now exposes the same plain-language help available
 in the desktop side rail for all eight destinations. Help dialogs are portaled
@@ -477,8 +516,8 @@ app/
                           live on their own route below
   tell-carebridge/page.tsx  The full AssistantPanel experience
   body-picture/page.tsx     The flagship 3D body-region picker (see components/body/)
-  guided-check-in/page.tsx  ManualEntry with forceWizard — one question at a time,
-                          independent of the Low Stimulation setting
+  guided-check-in/page.tsx  Branching guided histories plus the general ManualEntry
+                          wizard — one question at a time
   my-health/page.tsx        Unified record: changes, cycle-aware patterns/charts,
                             event history, Fitbit, and future connections
   records/page.tsx          Explicit-confirmation local document upload plus an

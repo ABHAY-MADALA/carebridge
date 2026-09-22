@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Plus, X, Activity, Thermometer, BatteryLow, Pill, Moon, CalendarDays, Utensils, Smile, FileText, Stethoscope } from "lucide-react";
+import { Check, Plus, X, Activity, Thermometer, BatteryLow, Pill, Moon, CalendarDays, Utensils, Smile, FileText, Stethoscope, Droplets, ClipboardList } from "lucide-react";
 import type { Category, DraftEvent } from "@/lib/schema";
 import { painLabelFor } from "@/lib/health/categories";
 import { useHealthData } from "@/components/health/useHealthData";
@@ -31,11 +31,13 @@ const CATEGORIES: Category[] = [
   "medication",
   "sleep",
   "cycle",
+  "urinary",
+  "bowel",
   "food",
   "mood",
   "other",
 ];
-const CATEGORY_ICON = { pain: Activity, illness: Thermometer, fatigue: BatteryLow, medication: Pill, sleep: Moon, cycle: CalendarDays, food: Utensils, mood: Smile, other: FileText, doctor_instruction: Stethoscope };
+const CATEGORY_ICON = { pain: Activity, illness: Thermometer, fatigue: BatteryLow, medication: Pill, sleep: Moon, cycle: CalendarDays, urinary: Droplets, bowel: ClipboardList, food: Utensils, mood: Smile, other: FileText, doctor_instruction: Stethoscope };
 
 const ONSETS = [
   { value: "Right now", key: "rightNow" },
@@ -53,6 +55,8 @@ const DEFAULT_LABEL: Record<Category, string> = {
   medication: "Medication",
   sleep: "Sleep",
   cycle: "Cycle",
+  urinary: "Urinary or bladder change",
+  bowel: "Bowel movement change",
   food: "Appetite",
   mood: "Mood",
   doctor_instruction: "From my doctor",

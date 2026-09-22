@@ -857,7 +857,6 @@ html[data-contrast="high"] .side-nav-card { border-width: 2px; box-shadow: none;
   .calm-view-strip-inner { padding-left: 14px; padding-right: 14px; }
   .calm-view-strip-copy small { display: none; }
   .top-nav-mobile-actions { gap: 1px; }
-  .top-nav-mobile-actions > .theme-toggle { display: none; }
   .top-nav-mobile-actions .profile-avatar { width: 32px; height: 32px; }
   .health-snapshot { grid-template-columns: 1fr; }
   .health-snapshot > div { min-height: 70px; padding: 12px 15px; }
@@ -882,6 +881,19 @@ html[data-contrast="high"] .side-nav-card { border-width: 2px; box-shadow: none;
   .phase-comparison { padding: 15px; }
   .phase-comparison li { grid-template-columns: 84px 1fr 84px; gap: 8px; font-size: 11px; }
   .help-tip-dialog.is-center { right: -80px; left: auto; transform: none; }
+}
+
+@media (max-width: 360px) {
+  .top-nav-inner { padding-right: 10px; padding-left: 10px; }
+  .top-nav-brand-logo { width: 124px; height: 28px; }
+  .top-nav-mobile-actions > .theme-toggle,
+  .top-nav-mobile-actions > .nav-icon-button,
+  .top-nav-mobile-actions > .relative > .nav-icon-button {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+  }
 }
 
 /* Quiet shared chrome and the anatomical workspace. */

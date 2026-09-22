@@ -21,7 +21,17 @@ import { describeOnset } from "./onset";
 */
 
 const RECENT_DAYS = 7;
-const SYMPTOM_CATEGORIES = new Set(["pain", "illness", "fatigue", "sleep", "food", "mood"]);
+const SYMPTOM_CATEGORIES = new Set([
+  "pain",
+  "illness",
+  "fatigue",
+  "sleep",
+  "cycle",
+  "urinary",
+  "bowel",
+  "food",
+  "mood",
+]);
 
 function recentEvents(events: HealthEvent[], days = RECENT_DAYS, now = new Date()): HealthEvent[] {
   const cutoff = now.getTime() - days * 86_400_000;

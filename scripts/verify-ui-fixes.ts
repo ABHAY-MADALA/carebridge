@@ -157,10 +157,10 @@ const topNavSource = readFileSync("components/TopNav.tsx", "utf8");
 const accessibilitySource = readFileSync("components/a11y/AccessibilityBar.tsx", "utf8");
 const themeSource = readFileSync("components/ui/ThemeToggle.tsx", "utf8");
 const globalStyles = readFileSync("app/globals.css", "utf8");
-assert.match(accessibilitySource, /vertical && <ThemeToggle full \/>/, "phone settings must include the theme control");
-assert.match(themeSource, /full && "is-full"/, "the settings theme control must expose its label and full tap target");
-assert.match(globalStyles, /\.top-nav-mobile-actions > \.theme-toggle \{ display: none; \}/, "only the crowded direct phone shortcut may be hidden");
-assert.doesNotMatch(globalStyles, /\.top-nav-mobile-actions \.theme-toggle \{ display: none; \}/, "nested phone settings controls must remain visible");
+assert.doesNotMatch(accessibilitySource, /ThemeToggle/, "Settings must not duplicate the always-visible theme control");
+assert.match(themeSource, /aria-label=\{label\}/, "the header theme control must retain an accessible name");
+assert.match(topNavSource, /top-nav-mobile-actions[\s\S]*?<ThemeToggle \/>[\s\S]*?<AccessibilityPanel/, "the phone theme control must sit directly beside Settings");
+assert.doesNotMatch(globalStyles, /\.top-nav-mobile-actions > \.theme-toggle \{ display: none; \}/, "the direct phone theme control must stay visible");
 for (const topic of ["home", "tell", "bodyPicture", "guidedCheckIn", "myHealth", "records", "explain", "clinician"]) {
   assert.match(topNavSource, new RegExp(`help: "${topic}"`), `mobile navigation must expose ${topic} help`);
 }

@@ -22,8 +22,12 @@ export function draftToEvent(
   metrics: DailyMetric[],
   occurredAt: Date = new Date(),
 ): HealthEvent {
-  const iso = occurredAt.toISOString();
-  const key = dateKey(occurredAt);
+  const suppliedDate = draft.occurredAt ? new Date(draft.occurredAt) : null;
+  const eventDate = suppliedDate && Number.isFinite(suppliedDate.getTime()) && suppliedDate <= occurredAt
+    ? suppliedDate
+    : occurredAt;
+  const iso = eventDate.toISOString();
+  const key = dateKey(eventDate);
 
   // Cycle context comes from the record for that day, never from the model.
   const day = metrics.find((m) => m.date === key);

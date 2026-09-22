@@ -18,6 +18,8 @@ export const Category = z.enum([
   "medication",
   "sleep",
   "cycle",
+  "urinary",
+  "bowel",
   "food",
   "mood",
   "doctor_instruction",

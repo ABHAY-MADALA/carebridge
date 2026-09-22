@@ -125,6 +125,28 @@ work across these measurements: resting heart rate moving 71 → 86 is large and
 obvious but only 18%, while step counts swing 20% between a Tuesday and a
 Saturday. See `lib/health/metrics.ts`.
 
+### Guided symptom histories
+
+Guided Check-In includes dedicated one-question-at-a-time paths for period or
+bleeding history, bladder or urination changes, bowel movements, and ongoing
+conditions or treatments. The ongoing-care path branches into tailored prompts
+for heart/circulation, breathing/lung conditions, diabetes/blood sugar, cancer
+care, hormones/PCOS, joints/mobility, memory/balance/vision/hearing, kidney/fluid
+changes, or another condition. It supports the major chronic-disease groups
+seen worldwide and common needs of adults over 50 without turning the first
+screen into a long diagnosis list.
+
+The forms capture concrete details such as onset, associated changes, effect on
+the person's usual day, relevant treatment or routine context, optional device
+measurements, and the patient's own note. Patients review the complete entry
+before confirming it. HealthThread also makes clear that it does not monitor
+emergencies.
+
+These questions organize details that can help a clinician understand the
+history; they do not narrow, suggest, or name a diagnosis. English and Spanish
+use the same structured fields, while the patient's selected wording remains in
+the record.
+
 ### Safety
 
 - No diagnosis, ever. Observations are phrased as deviations from the patient's
@@ -157,6 +179,7 @@ described in [the threat model](docs/security-threat-model.md). See
 See [AGENTS.md](AGENTS.md) for the file-by-file map, invariants, and deliberate
 shortcuts.
 
-**Not built, on purpose:** real EHR integration, Apple Health / Fitbit, caregiver
-accounts, telehealth, HIPAA infrastructure, multiple conditions. One convincing
-end-to-end experience instead.
+**Not built, on purpose:** real EHR integration, Apple Health, caregiver
+accounts, telehealth, or production HIPAA infrastructure. Condition-friendly
+check-ins organize patient-reported changes; they are not disease-management or
+diagnostic tools.

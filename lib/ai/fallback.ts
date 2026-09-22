@@ -100,6 +100,8 @@ type SymptomRule = {
 };
 
 const SYMPTOMS: SymptomRule[] = [
+  { match: /\b(?:urine|urinary|urination|urinating|pee|peeing|bladder|burning when (?:i )?(?:pee|urinate)|orina|orinar|vejiga|ardor al orinar)\b/i, category: "urinary", label: "Urinary or bladder change" },
+  { match: /\b(?:bowel|bowel movement|stool|poop|constipat(?:ed|ion)|diarrh(?:ea|eal)|evacuaci[oó]n|heces|estre[ñn]imiento|diarrea)\b/i, category: "bowel", label: "Bowel movement change" },
   { match: /\b(?:headache|headaches|migraine|migra[ñn]a|dolor de cabeza)\b/i, category: "pain", label: "Headache", location: "Head" },
   { match: /\b(?:cramp|cramps|cramping|c[oó]licos|calambres)\b/i, category: "pain", label: "Cramps" },
   { match: /\b(?:hurt|hurts|hurting|hurted|pain|painful|ache|aches|aching|sore|stabbing|throbbing)\b/i, category: "pain", label: "Pain" },
@@ -369,6 +371,8 @@ const REQUIRED_ANY: Partial<Record<Category, (keyof DraftEvent)[]>> = {
   fatigue: ["severity", "onset", "pattern"],
   illness: ["severity", "onset", "pattern"],
   sleep: ["durationMinutes", "severity"],
+  urinary: ["onset", "severity", "pattern"],
+  bowel: ["onset", "severity", "pattern"],
 };
 
 function isBlank(v: unknown) {
@@ -399,6 +403,8 @@ const CATEGORY_NOUN_ES: Partial<Record<Category, string>> = {
   illness: "el malestar",
   sleep: "el sueño",
   mood: "el ánimo",
+  urinary: "el cambio urinario",
+  bowel: "el cambio intestinal",
 };
 
 const QUESTIONS: Record<string, Record<string, (d: DraftEvent) => string>> = {

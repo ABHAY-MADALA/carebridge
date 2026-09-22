@@ -88,6 +88,9 @@ function categoryFromQuestion(question: string): string | undefined {
     return "pain";
   if (/\b(tired|fatigue\w*|exhaust\w*|energy)\b/i.test(question)) return "fatigue";
   if (/\b(sick|nausea\w*|fever\w*|dizz\w*|unwell)\b/i.test(question)) return "illness";
+  if (/\b(urin\w*|bladder|pee\w*)\b/i.test(question)) return "urinary";
+  if (/\b(bowel|stool|poop|constipat\w*|diarrh\w*)\b/i.test(question)) return "bowel";
+  if (/\b(period|cycle|menstrual|bleeding)\b/i.test(question)) return "cycle";
   return undefined;
 }
 
@@ -102,7 +105,7 @@ function episode(events: HealthEvent[]): HealthEvent[] {
   return events.filter(
     (e) =>
       new Date(e.occurredAt).getTime() >= cutoff &&
-      ["pain", "fatigue", "illness"].includes(e.category),
+      ["pain", "fatigue", "illness", "cycle", "urinary", "bowel"].includes(e.category),
   );
 }
 
@@ -110,7 +113,7 @@ function topSymptom(events: HealthEvent[], category?: string) {
   const pool = events.filter(
     (e) =>
       (category ? e.category === category : true) &&
-      ["pain", "fatigue", "illness"].includes(e.category),
+      ["pain", "fatigue", "illness", "cycle", "urinary", "bowel"].includes(e.category),
   );
   if (!pool.length) return null;
   return pool.reduce((best, e) =>
@@ -140,8 +143,9 @@ const MATCHERS: Matcher[] = [
   {
     // When did it start?
     test: /\b(when|how long|since when|start(?:ed)?|began|begin|onset)\b/i,
-    answer: ({ events }) => {
-      const pool = episode(events);
+    answer: ({ events }, question) => {
+      const asked = categoryFromQuestion(question);
+      const pool = episode(events).filter((event) => !asked || event.category === asked);
       if (!pool.length) return null;
 
       // The patient's own words about onset beat our computed date.
@@ -176,10 +180,12 @@ const MATCHERS: Matcher[] = [
 
       // Report the change for the symptom that was asked about, not whichever
       // metric happens to be listed first.
-      const change = describeSignal(
-        detection,
-        s.category === "fatigue" ? "fatigueLevel" : "painLevel",
-      );
+      const metric = s.category === "fatigue"
+        ? "fatigueLevel"
+        : s.category === "pain"
+          ? "painLevel"
+          : null;
+      const change = metric ? describeSignal(detection, metric) : null;
       return {
         text: `The worst ${s.label.toLowerCase()} I have recorded is ${s.severity} out of 10.${
           change ? ` ${change}` : ""
@@ -264,13 +270,40 @@ const MATCHERS: Matcher[] = [
     },
   },
   {
+    test: /\b(urin\w*|bladder|pee\w*)\b/i,
+    answer: ({ events }) => {
+      const ev = events.find((event) => event.category === "urinary");
+      return ev
+        ? {
+            text: `I recorded a urinary or bladder change ${relativeDays(ev.occurredAt)}.${ev.originalInput ? ` My recorded answers are: ${ev.originalInput.replace(/\n/g, " ")}` : ""}`,
+            ids: [ev.id],
+          }
+        : null;
+    },
+  },
+  {
+    test: /\b(bowel|stool|poop|constipat\w*|diarrh\w*)\b/i,
+    answer: ({ events }) => {
+      const ev = events.find((event) => event.category === "bowel");
+      return ev
+        ? {
+            text: `I recorded a bowel movement change ${relativeDays(ev.occurredAt)}.${ev.originalInput ? ` My recorded answers are: ${ev.originalInput.replace(/\n/g, " ")}` : ""}`,
+            ids: [ev.id],
+          }
+        : null;
+    },
+  },
+  {
     test: /\b(period|cycle|menstrual|bleeding)\b/i,
     answer: ({ events, metrics }) => {
       const ev = events.find((e) => e.category === "cycle");
       const today = metrics[metrics.length - 1];
       if (!ev && !today?.cyclePhase) return null;
       const parts: string[] = [];
-      if (ev) parts.push(`I recorded "${ev.label.toLowerCase()}" ${relativeDays(ev.occurredAt)}`);
+      if (ev) {
+        const details = ev.originalInput.replace(/\s+/g, " ").replace(/[.!?]+$/, "").trim();
+        parts.push(`I recorded "${ev.label.toLowerCase()}" ${relativeDays(ev.occurredAt)}${details ? `. My recorded details were: ${details}` : ""}`);
+      }
       if (today?.cycleDay) parts.push(`I am on day ${today.cycleDay} of my cycle, in the ${today.cyclePhase} phase`);
       return { text: `${parts.join(". ")}.`, ids: ev ? [ev.id] : [] };
     },

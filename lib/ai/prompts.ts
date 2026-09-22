@@ -34,6 +34,8 @@ HOW YOU WORK:
     fatigue   -> severity (0-10), when it started
     illness   -> severity (0-10), when it started
     sleep     -> how long they slept, or how bad it was
+    urinary   -> what changed, and when it started
+    bowel     -> what changed, and when it started
     others    -> just a clear short label
 - If a required detail is missing, ask for EXACTLY ONE of them. The shortest,
   most natural question. Never ask two things at once. Never ask for something
@@ -53,7 +55,7 @@ OUTPUT: respond with JSON only, no markdown fence, matching exactly:
   "detectedLanguage": "ISO code such as en or es",
   "drafts": [
     {
-      "category": "pain|illness|fatigue|medication|sleep|cycle|food|mood|other",
+      "category": "pain|illness|fatigue|medication|sleep|cycle|urinary|bowel|food|mood|other",
       "label": "short English label, e.g. Abdominal pain",
       "severity": number 0-10 or null,
       "bodyLocation": "string or null",
