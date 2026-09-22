@@ -45,6 +45,24 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
+### Mobile theme and navigation parity (September 22, 2026)
+
+Phone layouts now retain the compact header without losing theme access: the
+Accessibility settings panel includes a full-width Light mode / Dark mode
+control, while the direct header shortcut remains hidden below 768px to avoid
+crowding the logo, profile and menu controls. The CSS selectors that compact or
+hide the direct desktop/tablet shortcut are scoped to direct children so they do
+not accidentally hide the control inside Settings.
+
+The compact phone navigation now exposes the same plain-language help available
+in the desktop side rail for all eight destinations. Help dialogs are portaled
+and remain interactive without closing their parent menu. A real Chromium mobile
+emulation at 390x844 verified dark-to-light switching and persistence, eight menu
+destinations with eight help controls, and no horizontal overflow on Home, Talk
+or type, Body Picture, Guided Check-In, My Health, Health Records, Help Me
+Explain, or Show My Doctor. All verification suites, typecheck and the production
+build pass.
+
 ### External-AI approval-flow wording (September 19, 2026)
 
 The website now describes the AI conversation inbox as the destination for

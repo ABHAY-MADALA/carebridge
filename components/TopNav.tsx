@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { AccessibilityPanel } from "@/components/a11y/AccessibilityPanel";
+import { HelpTip } from "@/components/HelpTip";
 import { useT } from "@/components/a11y/useT";
 import { BrandMark } from "@/components/BrandMark";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -24,27 +25,27 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { DemoIndicator, ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 
 const MOBILE_GROUPS = [
-  { label: "", items: [{ href: "/", key: "home", icon: Home }] },
+  { label: "", items: [{ href: "/", key: "home", help: "home", icon: Home }] },
   {
     label: "addHealthInfo",
     items: [
-      { href: "/tell-carebridge", key: "tell", icon: MessageCircle },
-      { href: "/body-picture", key: "bodyPicture", icon: PersonStanding },
-      { href: "/guided-check-in", key: "guidedCheckIn", icon: ClipboardList },
+      { href: "/tell-carebridge", key: "tell", help: "tell", icon: MessageCircle },
+      { href: "/body-picture", key: "bodyPicture", help: "bodyPicture", icon: PersonStanding },
+      { href: "/guided-check-in", key: "guidedCheckIn", help: "guidedCheckIn", icon: ClipboardList },
     ],
   },
   {
     label: "myRecord",
     items: [
-      { href: "/my-health", key: "myHealth", icon: Watch },
-      { href: "/records", key: "records", icon: FileHeart },
+      { href: "/my-health", key: "myHealth", help: "myHealth", icon: Watch },
+      { href: "/records", key: "records", help: "records", icon: FileHeart },
     ],
   },
   {
     label: "doctorVisit",
     items: [
-      { href: "/explain", key: "explain", icon: HeartPulse },
-      { href: "/clinician", key: "clinician", icon: Stethoscope },
+      { href: "/explain", key: "explain", help: "explain", icon: HeartPulse },
+      { href: "/clinician", key: "clinician", help: "clinician", icon: Stethoscope },
     ],
   },
 ] as const;
@@ -68,6 +69,7 @@ export function TopNav() {
     if (!menuOpen) return;
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && setMenuOpen(false);
     const onPointer = (event: MouseEvent) => {
+      if (event.target instanceof Element && event.target.closest(".help-tip-dialog")) return;
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
     };
     document.addEventListener("keydown", onKey);
@@ -128,11 +130,14 @@ export function TopNav() {
               {MOBILE_GROUPS.map((group) => (
                 <div key={group.label || "home"} className="mobile-nav-group">
                   {group.label && <p>{t(`nav.${group.label}`)}</p>}
-                  {group.items.map(({ href, key, icon: Icon }) => (
-                    <Link key={href} href={href} aria-current={active(pathname, href) ? "page" : undefined}>
-                      <Icon aria-hidden />
-                      <span>{t(`nav.${key}`)}</span>
-                    </Link>
+                  {group.items.map(({ href, key, help, icon: Icon }) => (
+                    <div key={href} className="mobile-nav-row">
+                      <Link href={href} aria-current={active(pathname, href) ? "page" : undefined}>
+                        <Icon aria-hidden />
+                        <span>{t(`nav.${key}`)}</span>
+                      </Link>
+                      <HelpTip topic={help} compact align="right" />
+                    </div>
                   ))}
                 </div>
               ))}
