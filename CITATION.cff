@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use HealthThread, please cite this project."
+title: HealthThread
+type: software
+abstract: "Accessible health communication platform created during Bay Hacks 2026."
+authors:
+  - family-names: Afrin
+    given-names: Rufaida
+  - family-names: Madala
+    given-names: Abhay
+repository-code: https://github.com/HEALTHTHREAD/HEALTH-THREAD
+url: https://healththread-demo.onrender.com
