@@ -81,7 +81,12 @@ export function useVoiceInput({
       try {
         const form = new FormData();
         form.append("audio", blob, "input.webm");
-        const res = await fetch("/api/transcribe", { method: "POST", body: form, signal: controller.signal });
+        const res = await fetch("/api/transcribe", {
+          method: "POST",
+          headers: { "x-carebridge-request": "1" },
+          body: form,
+          signal: controller.signal,
+        });
         if (!active.current) return;
 
         /*

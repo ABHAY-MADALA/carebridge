@@ -94,7 +94,7 @@ export function AssistantPanel({
               try {
                 const t = await fetch("/api/translate", {
                   method: "POST",
-                  headers: { "content-type": "application/json" },
+                  headers: { "content-type": "application/json", "x-carebridge-request": "1" },
                   body: JSON.stringify({ text: d.originalInput }),
                 });
                 const json = (await t.json()) as { english?: string };

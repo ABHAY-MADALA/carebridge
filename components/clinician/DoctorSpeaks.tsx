@@ -41,7 +41,7 @@ export function DoctorSpeaks({ speech }: { speech: ReturnType<typeof useSpeaker>
       try {
         const res = await fetch("/api/explain-back", {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: { "content-type": "application/json", "x-carebridge-request": "1" },
           body: JSON.stringify({ text: t, language: settings.language }),
         });
         const data = (await res.json()) as ExplainBack;

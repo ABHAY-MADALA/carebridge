@@ -45,6 +45,37 @@ These are product requirements, not preferences. Do not relax them.
 
 ## Status board
 
+### Personal-fork security hardening (September 22, 2026)
+
+This work exists only in `rufaidaafrin/HEALTH-THREAD`; the organization
+repository remains unchanged. HealthThread now has a documented STRIDE threat
+model and disclosure policy, patched PostCSS dependency resolution with zero
+current `npm audit` findings, Dependabot, CodeQL, Gitleaks and CI security checks,
+browser security headers, endpoint-specific rate limits and bounded request
+bodies. Standalone voice/translation routes now enforce the same-origin custom
+request marker used by the profile backend.
+
+Optional AES-256-GCM envelope encryption covers record JSON, uploaded document
+bytes and stored Fitbit/Google tokens. Production mode requires a 32-byte base64
+data key, a separate audit HMAC key, HTTPS origin and fresh signed assertions
+from an identity-aware proxy; replayed assertions are rejected. Sensitive
+mutations create PHI-free HMAC hash-chained audit entries. Local mode remains
+backward-compatible with existing plaintext databases, and the public Render
+mode remains synthetic-only with no Personal, real OAuth or document uploads.
+
+Document uploads are held in memory until extension and magic-byte agreement,
+active-PDF checks, XML entity rejection and the standard EICAR fixture check
+pass. This is defense in depth, not a replacement for a managed production
+malware scanner. The new focused security suite demonstrates encryption tamper
+detection, identity replay rejection, throttling, upload rejection, audit-chain
+tamper detection and header coverage. The full verification suite, typecheck,
+production build and `npm audit --omit=dev --audit-level=high` all pass.
+
+Do not describe this as HIPAA-compliant or production-certified. The per-process
+limiter needs a shared production store, the CSP still allows Next-required
+inline code, a real identity proxy and key-management system must be deployed,
+and no formal penetration test or compliance assessment has occurred.
+
 ### Mobile theme and navigation parity (September 22, 2026)
 
 Phone layouts now retain the compact header without losing theme access: the

@@ -136,6 +136,22 @@ Saturday. See `lib/health/metrics.ts`.
 - Every AI output is validated with Zod, and scanned by a no-diagnosis guard
   before a patient reads it.
 
+### Security engineering
+
+HealthThread treats profile isolation, consent and public-demo separation as
+enforced boundaries rather than presentation labels. The application includes
+same-origin/CSRF checks, server-bound profile contexts, PKCE OAuth replay
+protection, endpoint rate limits, security headers, optional AES-256-GCM storage
+encryption, PHI-free hash-chained audit records, upload signature inspection and
+automated attack tests. The public deployment exposes synthetic Alex only and
+cannot access Personal, document uploads or real OAuth.
+
+This is still a prototype, not a HIPAA-compliant clinical service. Production
+Personal mode requires the identity-aware proxy, encryption and audit secrets
+described in [the threat model](docs/security-threat-model.md). See
+[SECURITY.md](SECURITY.md) for supported boundaries and
+[the security demo](docs/security-demo.md) for reproducible checks.
+
 ### Architecture notes
 
 See [AGENTS.md](AGENTS.md) for the file-by-file map, invariants, and deliberate

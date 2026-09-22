@@ -8,6 +8,10 @@ import { ProfileStore, newRecordId } from "./store";
 import { healthSnapshot, timeline, generateSummaryForProfile, ask, assistant, approvedSpeech } from "./health";
 import { FitbitService } from "./fitbit";
 import { DocumentStore } from "./documents";
+import { appendSecurityAudit } from "@/lib/security/audit";
+import { productionOrigin, securityMode } from "@/lib/security/config";
+import { verifyProductionIdentity } from "@/lib/security/identity";
+import { consumeRateLimit, requestFingerprint } from "@/lib/security/rateLimit";
 
 const cookieName = "carebridge_backend_session";
 export const contextKey = (s: Session) => `${s.userId}:${s.revision}`;
@@ -20,6 +24,41 @@ const profileInfo = (s: Session) => {
   return { profile, profiles, context: contextKey(s) };
 };
 const Confirm = z.object({ confirmed: z.literal(true) }).strict();
+
+function audit(
+  db: BackendDatabase | undefined,
+  session: Session | null,
+  action: string,
+  outcome: "success" | "denied" | "failure",
+) {
+  if (!db) return;
+  try {
+    appendSecurityAudit(db, session, action, outcome);
+  } catch (error) {
+    // Audit failures never expose health data and are intentionally conspicuous.
+    // A managed deployment should alert on this log and stop accepting traffic.
+    console.error("[healththread-security] audit append failed", (error as Error).message);
+  }
+}
+
+function enforceBackendRate(req: Request, endpoint: string, session?: Session) {
+  const identity = session?.key ?? requestFingerprint(req);
+  const expensive = ["ask", "assistant", "summary/generate"].includes(endpoint);
+  const oauth = endpoint.startsWith("fitbit/");
+  const upload = endpoint === "documents" && req.method === "POST";
+  const download = endpoint === "documents/file" || endpoint === "speech";
+  const rule = upload
+    ? { limit: 30, windowMs: 10 * 60_000 }
+    : expensive
+      ? { limit: 20, windowMs: 60_000 }
+      : oauth
+        ? { limit: 10, windowMs: 5 * 60_000 }
+        : download
+          ? { limit: 60, windowMs: 60_000 }
+          : { limit: 120, windowMs: 60_000 };
+  const result = consumeRateLimit(`backend:${endpoint}:${identity}`, rule);
+  if (!result.allowed) throw new BackendError(429, "rate-limit-exceeded");
+}
 
 function requestBoundary(req: Request, callback: boolean) {
   const url = new URL(req.url);
@@ -38,6 +77,22 @@ function requestBoundary(req: Request, callback: boolean) {
       throw new BackendError(403, "cross-origin-request");
     }
     if (req.method !== "GET" && req.headers.get("x-carebridge-request") !== "1") {
+      throw new BackendError(403, "request-header-required");
+    }
+    return configuredOrigin;
+  }
+  if (securityMode() === "production") {
+    verifyProductionIdentity(req);
+    const configuredOrigin = productionOrigin()!;
+    if (host !== configuredOrigin.host) throw new BackendError(403, "invalid-host");
+    const origin = req.headers.get("origin");
+    if (
+      (origin && origin !== configuredOrigin.origin) ||
+      req.headers.get("sec-fetch-site") === "cross-site"
+    ) {
+      throw new BackendError(403, "cross-origin-request");
+    }
+    if (!callback && req.method !== "GET" && req.headers.get("x-carebridge-request") !== "1") {
       throw new BackendError(403, "request-header-required");
     }
     return configuredOrigin;
@@ -78,34 +133,46 @@ async function body(req: Request, limit = 1024 * 1024): Promise<unknown> {
 
 /** Dependency injection is only available to server tests, never request data. */
 export async function handleBackend(req: Request, path: string[], database?: BackendDatabase, fitbitService?: FitbitService): Promise<NextResponse> {
+  const endpoint = path.join("/");
+  let auditDb: BackendDatabase | undefined;
+  let auditSession: Session | null = null;
   try {
-    const endpoint = path.join("/");
     const callback = endpoint === "fitbit/callback" && req.method === "GET";
     const requestOrigin = requestBoundary(req, callback);
     const db = database ?? getDatabase();
+    auditDb = db;
     const fitbit = fitbitService ?? new FitbitService(db);
     if (endpoint === "session" && req.method === "POST") {
+      enforceBackendRate(req, endpoint);
       let existing: Session | undefined;
       try { existing = sessionFrom(req, db); } catch { /* expired -> new controlled session */ }
       if (existing && publicDemoEnabled() && existing.userId !== "alex-demo") {
         existing = db.switchProfile(existing, "alex-demo");
       }
-      if (existing) return json(profileInfo(existing), 200, existing);
+      if (existing) {
+        audit(db, existing, "session.resume", "success");
+        return json(profileInfo(existing), 200, existing);
+      }
       const created = db.createSession(publicDemoEnabled() ? "alex-demo" : "personal");
+      audit(db, created.session, "session.create", "success");
       const response = json(profileInfo(created.session), 201, created.session);
       response.cookies.set(cookieName, created.token, { httpOnly: true, sameSite: "lax", secure: requestOrigin.protocol === "https:", path: "/api/backend", maxAge: 12*3600 });
       return response;
     }
     let session = sessionFrom(req, db);
+    auditSession = session;
     if (publicDemoEnabled() && session.userId !== "alex-demo") {
       session = db.switchProfile(session, "alex-demo");
+      auditSession = session;
     }
+    enforceBackendRate(req, endpoint, session);
     if (endpoint === "session" && req.method === "GET") return json(profileInfo(session), 200, session);
     if (callback) {
       const url = new URL(req.url);
       const state = url.searchParams.get("state"); const code = url.searchParams.get("code");
       if (!state || !code) throw new BackendError(400, "oauth-not-authorized");
       await fitbit.callback(session, state, code);
+      audit(db, session, "fitbit.callback", "success");
       if (req.headers.get("accept")?.includes("text/html")) {
         return NextResponse.redirect(new URL("/my-health?fitbit=connected", req.url), 303);
       }
@@ -118,6 +185,7 @@ export async function handleBackend(req: Request, path: string[], database?: Bac
         throw new BackendError(403, "profile-not-available");
       }
       const switched = db.switchProfile(session, input.userId);
+      audit(db, switched, "profile.switch", "success");
       return json(profileInfo(switched), 200, switched);
     }
     const profileDb = getProfileDatabase(session, db);
@@ -228,8 +296,15 @@ export async function handleBackend(req: Request, path: string[], database?: Bac
       }
       default: throw new BackendError(404, "endpoint-not-found");
     }
+    audit(db, session, `${req.method.toLowerCase()}.${endpoint}`, "success");
     return json(result, 200, session);
   } catch (error) {
+    if (req.method !== "GET" || endpoint === "fitbit/callback") {
+      const denied =
+        (error instanceof BackendError && error.status < 500) ||
+        error instanceof z.ZodError;
+      audit(auditDb, auditSession, `${req.method.toLowerCase()}.${endpoint}`, denied ? "denied" : "failure");
+    }
     const browserCallback =
       path.join("/") === "fitbit/callback" &&
       req.method === "GET" &&
@@ -248,6 +323,9 @@ export async function handleBackend(req: Request, path: string[], database?: Bac
     }
     if (error instanceof BackendError) return json({ error: error.code }, error.status);
     if (error instanceof z.ZodError) return json({ error: "invalid-request-or-provider-data" }, 400);
+    if (error instanceof Error && error.message.startsWith("production-identity")) {
+      return json({ error: "production-identity-required" }, 401);
+    }
     // Never leak SQL contents, original health text, OAuth tokens or provider bodies.
     return json({ error: "backend-operation-failed" }, 500);
   }

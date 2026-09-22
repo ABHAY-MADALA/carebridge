@@ -9,7 +9,8 @@
     "preview:public": "node scripts/start-public-demo.mjs",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "verify": "tsx scripts/verify-engine.ts && tsx scripts/verify-fallback.ts && tsx scripts/verify-guards.ts && tsx scripts/verify-advocate.ts && tsx scripts/verify-ui-fixes.ts && tsx scripts/verify-ai-import.ts && tsx scripts/verify-profile-backend.ts && tsx scripts/verify-profile-api.ts && tsx scripts/verify-profile-frontend.ts && tsx scripts/verify-merged-profiles.ts && tsx scripts/verify-public-demo.ts",
+    "verify": "tsx scripts/verify-engine.ts && tsx scripts/verify-fallback.ts && tsx scripts/verify-guards.ts && tsx scripts/verify-advocate.ts && tsx scripts/verify-ui-fixes.ts && tsx scripts/verify-ai-import.ts && tsx scripts/verify-profile-backend.ts && tsx scripts/verify-profile-api.ts && tsx scripts/verify-profile-frontend.ts && tsx scripts/verify-merged-profiles.ts && tsx scripts/verify-public-demo.ts && tsx scripts/verify-security.ts",
+    "verify:security": "tsx scripts/verify-security.ts",
     "check-voice": "tsx scripts/check-voice.ts",
     "rehearse": "tsx scripts/rehearse.ts",
     "rehearse:profiles": "tsx scripts/rehearse-profiles.ts"
@@ -35,9 +36,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.49",
+    "postcss": "8.5.28",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.23.13",
     "typescript": "^5.7.3"
+  },
+  "overrides": {
+    "postcss": "$postcss"
   }
 }

@@ -53,6 +53,16 @@ export class BackendDatabase {
         state TEXT PRIMARY KEY, session_key TEXT NOT NULL REFERENCES sessions(key),
         user_id TEXT NOT NULL CHECK(user_id='personal'), revision INTEGER NOT NULL,
         verifier TEXT NOT NULL, expires_at INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        occurred_at TEXT NOT NULL,
+        actor_hash TEXT NOT NULL,
+        profile_id TEXT CHECK(profile_id IS NULL OR profile_id IN ('personal','alex-demo')),
+        action TEXT NOT NULL,
+        outcome TEXT NOT NULL CHECK(outcome IN ('success','denied','failure')),
+        resource_hash TEXT,
+        previous_hash TEXT NOT NULL,
+        entry_hash TEXT NOT NULL UNIQUE);
     `);
   }
   close() { this.sql.close(); }

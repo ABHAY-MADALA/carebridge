@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { elevenLabsKey } from "@/lib/voice/elevenlabs";
 import { getProvider } from "@/lib/ai/provider";
+import { secureApiRequest } from "@/lib/security/request";
 
 export const runtime = "nodejs";
 
@@ -12,11 +13,13 @@ export const runtime = "nodejs";
 
   Booleans only — never the keys themselves.
 */
-export async function GET() {
+export async function GET(req: Request) {
+  const security = secureApiRequest(req, "voice-status", { limit: 120, windowMs: 60_000 });
+  if (!security.ok) return security.response;
   const provider = getProvider();
   return NextResponse.json({
     elevenlabs: Boolean(elevenLabsKey()),
     llm: Boolean(provider),
     llmProvider: provider?.name ?? null,
-  });
+  }, { headers: security.rateHeaders });
 }

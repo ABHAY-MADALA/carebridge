@@ -1,21 +1,24 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { translateToEnglish } from "@/lib/ai/translate";
+import { limitedJson, secureApiRequest } from "@/lib/security/request";
 
 export const runtime = "nodejs";
 
-const Body = z.object({ text: z.string().min(1) });
+const Body = z.object({ text: z.string().min(1).max(4000) }).strict();
 
 export async function POST(req: Request) {
+  const security = secureApiRequest(req, "translate", { limit: 30, windowMs: 60_000 }, { mutation: true });
+  if (!security.ok) return security.response;
   let text: string;
   try {
-    text = Body.parse(await req.json()).text;
+    text = Body.parse(await limitedJson(req, 16 * 1024)).text;
   } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request" }, { status: 400, headers: security.rateHeaders });
   }
 
   try {
-    return NextResponse.json(await translateToEnglish(text));
+    return NextResponse.json(await translateToEnglish(text), { headers: security.rateHeaders });
   } catch (err) {
     console.error("[carebridge] translate route error:", err);
     return NextResponse.json({
@@ -23,6 +26,6 @@ export async function POST(req: Request) {
       english: text,
       detectedLanguage: "en",
       source: "fallback",
-    });
+    }, { headers: security.rateHeaders });
   }
 }

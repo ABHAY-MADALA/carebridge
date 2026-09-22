@@ -51,7 +51,7 @@ async function fetchAudioUrl(text: string, speaker: Speaker): Promise<string | n
     try {
       const res = await fetch("/api/speech", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "x-carebridge-request": "1" },
         body: JSON.stringify({ text, speaker }),
       });
       /*

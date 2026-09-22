@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { elevenLabsKey, synthesize } from "@/lib/voice/elevenlabs";
+import { limitedJson, secureApiRequest } from "@/lib/security/request";
 
 export const runtime = "nodejs";
 
@@ -10,11 +11,13 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  const security = secureApiRequest(req, "speech", { limit: 20, windowMs: 60_000 }, { mutation: true });
+  if (!security.ok) return security.response;
   let body;
   try {
-    body = Body.parse(await req.json());
+    body = Body.parse(await limitedJson(req, 24 * 1024));
   } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request" }, { status: 400, headers: security.rateHeaders });
   }
 
   /*
@@ -22,7 +25,7 @@ export async function POST(req: Request) {
     normal outcome, not a failure: the client hears 204 and uses the browser's
     own speech engine, so the patient always gets a voice.
   */
-  if (!elevenLabsKey()) return new NextResponse(null, { status: 204 });
+  if (!elevenLabsKey()) return new NextResponse(null, { status: 204, headers: security.rateHeaders });
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
@@ -37,11 +40,12 @@ export async function POST(req: Request) {
       headers: {
         "content-type": "audio/mpeg",
         "cache-control": "no-store",
+        ...security.rateHeaders,
       },
     });
   } catch (err) {
     console.warn("[carebridge] tts unavailable, client will fall back:", (err as Error).message);
-    return new NextResponse(null, { status: 204 });
+    return new NextResponse(null, { status: 204, headers: security.rateHeaders });
   } finally {
     clearTimeout(timer);
   }

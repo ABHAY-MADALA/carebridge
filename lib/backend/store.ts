@@ -5,6 +5,7 @@ import { buildEvents, buildMetrics } from "@/lib/store/seed";
 import { dateKey } from "@/lib/dates";
 import { summaryHasContent } from "@/lib/health/summary";
 import { BackendDatabase } from "./database";
+import { openText, sealText } from "@/lib/security/crypto";
 import {
   ProfileId,
   OwnedEvent,
@@ -130,8 +131,9 @@ export class ProfileStore {
   }
   private stamp(raw: object) { return { ...raw, userId: this.userId, synthetic: this.userId === "alex-demo" }; }
   private list<S extends z.ZodTypeAny>(kind: Kind, schema: S): z.output<S>[] {
-    return this.db.sql.prepare("SELECT data FROM records WHERE user_id=? AND kind=? ORDER BY id").all(this.userId, kind).map(row => {
-      const data = JSON.parse(String(row.data));
+    return this.db.sql.prepare("SELECT id,data FROM records WHERE user_id=? AND kind=? ORDER BY id").all(this.userId, kind).map(row => {
+      const id = String(row.id);
+      const data = JSON.parse(openText(String(row.data), `record:${this.userId}:${kind}:${id}`));
       if (data.userId !== this.userId) throw new BackendError(500, "corrupt-record-ownership");
       return schema.parse(data);
     });
@@ -139,14 +141,14 @@ export class ProfileStore {
   private get(kind: Kind, id: string): unknown | null {
     const row = this.db.sql.prepare("SELECT data FROM records WHERE user_id=? AND kind=? AND id=?").get(this.userId, kind, id);
     if (!row) return null;
-    const data = JSON.parse(String(row.data));
+    const data = JSON.parse(openText(String(row.data), `record:${this.userId}:${kind}:${id}`));
     if (data.userId !== this.userId) throw new BackendError(500, "corrupt-record-ownership");
     return data;
   }
   private put(kind: Kind, id: string, data: object) {
     this.owned(data);
     this.db.sql.prepare("INSERT INTO records VALUES (?,?,?,?) ON CONFLICT(user_id,kind,id) DO UPDATE SET data=excluded.data")
-      .run(this.userId, kind, id, JSON.stringify({ ...data, userId: this.userId }));
+      .run(this.userId, kind, id, sealText(JSON.stringify({ ...data, userId: this.userId }), `record:${this.userId}:${kind}:${id}`));
   }
   private remove(kind: Kind, id: string) { this.db.sql.prepare("DELETE FROM records WHERE user_id=? AND kind=? AND id=?").run(this.userId, kind, id); }
   private invalidateSummary() { this.remove("summary", "current"); }
@@ -339,12 +341,12 @@ export class ProfileStore {
   connection() {
     requirePersonal(this.userId);
     const row = this.db.sql.prepare("SELECT data FROM connections WHERE user_id=?").get(this.userId);
-    return row ? Connection.parse(JSON.parse(String(row.data))) : null;
+    return row ? Connection.parse(JSON.parse(openText(String(row.data), `connection:${this.userId}`))) : null;
   }
   saveConnection(value: Connection) {
     requirePersonal(this.userId);
     const connection = Connection.parse(value);
-    this.db.sql.prepare("INSERT INTO connections VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET data=excluded.data").run(this.userId, JSON.stringify(connection));
+    this.db.sql.prepare("INSERT INTO connections VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET data=excluded.data").run(this.userId, sealText(JSON.stringify(connection), `connection:${this.userId}`));
   }
   disconnect() {
     requirePersonal(this.userId);
