@@ -25,6 +25,10 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run typecheck
       - run: npm run verify:security
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # The commercial gitleaks-action wrapper requires an organization
+      # license. Run the same open-source scanner directly so personal and
+      # organization forks enforce one license-independent secret scan.
+      - name: Scan Git history for secrets
+        uses: docker://ghcr.io/gitleaks/gitleaks:v8.28.0
+        with:
+          args: detect --source=/github/workspace --no-banner --redact --verbose
