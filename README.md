@@ -34,8 +34,8 @@ condition, is one demonstration case, not the product's identity.
 
 | Contributor | Role | Contributions |
 | --- | --- | --- |
-| [Rufaida Afrin](https://github.com/rufaidaafrin) | Co-Creator, Product, Frontend & Security Engineering | Originated the HealthThread concept, developed the frontend, helped shape the product and user experience, and worked on security safeguards including a threat model, profile isolation, request protections, encrypted storage options, and security verification. |
-| [Abhay Madala](https://github.com/ABHAY-MADALA) | Co-Creator, Backend & AI Development | Contributed to backend implementation, AI/LLM features, and the Fitbit integration. |
+| [Rufaida Afrin](https://github.com/rufaidaafrin) | Co-Creator, Frontend & Security Engineering | Originated the HealthThread concept, developed the frontend, and worked on security safeguards including a threat model, profile isolation, request protections, encrypted storage options, and security verification. |
+| [Abhay Madala](https://github.com/ABHAY-MADALA) | Co-Creator, Product, Backend & AI Development | Shaped the product and user experience, and contributed to backend implementation, AI/LLM features, and the Fitbit integration. |
 
 Git commit counts do not represent the complete contribution of any team member.
 
