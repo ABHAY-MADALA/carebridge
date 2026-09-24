@@ -88,7 +88,7 @@ async function main() {
   assert.match(source("components/explain/SummaryEditor.tsx"), /!calmMode \|\| showControls \|\| editingId !== null/);
   assert.match(source("components/Chrome.tsx"), /calm-view-strip/);
   assert.match(source("components/Chrome.tsx"), /ProfileSwitcher/);
-  assert.match(source("app/layout.tsx"), /title: "HealthThread"/);
+  assert.match(source("app/layout.tsx"), /applicationName: SITE_NAME/);
   assert.match(source("app/layout.tsx"), /<ProfileProvider>/);
   assert.match(source("components/TopNav.tsx"), /aria-label="HealthThread home"/);
   console.log("PASS merged UI contracts: navigation/profile integration, baseline state, wearable-only history, upload context, voice cleanup, deep links");
