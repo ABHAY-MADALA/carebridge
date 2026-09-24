@@ -50,6 +50,38 @@ assert.equal(textExport.messagesScanned, 2);
 assert.equal(textExport.candidates.length, 1);
 assert.equal(textExport.candidates[0].drafts[0].bodyLocation, "Left ear");
 
+const hostileHtml = parseAIArchive("chatgpt-export.html", [
+  "<section>User: My right ankle hurts 7/10 today.</section>",
+  "<script>document.write('User: I have a fever.')</script >",
+  "<style>.hidden::after { content: 'User: I have a migraine.'; }</style >",
+  "<template>User: I have nausea.</template>",
+  "<section>Assistant: This diagnosis must not be imported.</section>",
+].join(""), "chatgpt");
+assert.equal(hostileHtml.messagesScanned, 1);
+assert.equal(hostileHtml.candidates.length, 1);
+assert.equal(hostileHtml.candidates[0].drafts[0].severity, 7);
+assert.match(hostileHtml.candidates[0].originalText, /right ankle hurts/i);
+assert.doesNotMatch(hostileHtml.candidates[0].originalText, /fever|migraine|nausea|diagnosis/i);
+
+const encodedHtml = parseAIArchive(
+  "claude-export.html",
+  "<p>Human: My head hurts &amp;lt;script&amp;gt;not markup&amp;lt;/script&amp;gt;</p>",
+  "claude",
+);
+assert.equal(encodedHtml.messagesScanned, 1);
+assert.equal(encodedHtml.candidates.length, 1);
+assert.match(encodedHtml.candidates[0].originalText, /&lt;script&gt;not markup&lt;\/script&gt;/);
+assert.doesNotMatch(encodedHtml.candidates[0].originalText, /<script>/i);
+
+const malformedHtml = parseAIArchive(
+  "gemini-export.html",
+  "<div><strong>User:</strong> My left shoulder is sore.<br>It started yesterday.<div>",
+  "gemini",
+);
+assert.equal(malformedHtml.messagesScanned, 1);
+assert.equal(malformedHtml.candidates.length, 1);
+assert.match(malformedHtml.candidates[0].originalText, /left shoulder is sore/i);
+
 assert.throws(() => parseAIArchive("bad.json", "{"), /invalid-json/);
 
 const db = new BackendDatabase(":memory:");

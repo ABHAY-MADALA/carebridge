@@ -4,6 +4,7 @@ import type {
   AIProvider,
 } from "@/lib/backend/schema";
 import type { DraftEvent } from "@/lib/schema";
+import { parseFragment, type DefaultTreeAdapterMap } from "parse5";
 
 export type ParsedAIArchive = {
   candidates: AIImportCandidateInput[];
@@ -142,25 +143,85 @@ function collectJsonMessages(root: unknown): ExtractedMessage[] {
   return messages;
 }
 
-function decodeEntities(text: string) {
-  return text
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'");
+const HTML_BLOCK_ELEMENTS = new Set([
+  "address",
+  "article",
+  "aside",
+  "blockquote",
+  "dd",
+  "div",
+  "dl",
+  "dt",
+  "fieldset",
+  "figcaption",
+  "figure",
+  "footer",
+  "form",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "header",
+  "hr",
+  "li",
+  "main",
+  "nav",
+  "ol",
+  "p",
+  "pre",
+  "section",
+  "table",
+  "tbody",
+  "td",
+  "tfoot",
+  "th",
+  "thead",
+  "tr",
+  "ul",
+]);
+
+const HTML_IGNORED_ELEMENTS = new Set([
+  "script",
+  "style",
+  "template",
+  "noscript",
+]);
+
+function htmlToPlainText(source: string): string {
+  const fragment = parseFragment(source);
+  const chunks: string[] = [];
+
+  const visit = (node: DefaultTreeAdapterMap["node"]) => {
+    if (node.nodeName === "#text" && "value" in node) {
+      chunks.push(node.value);
+      return;
+    }
+
+    if ("tagName" in node) {
+      const tagName = node.tagName.toLowerCase();
+      if (HTML_IGNORED_ELEMENTS.has(tagName)) return;
+      if (tagName === "br") {
+        chunks.push("\n");
+        return;
+      }
+      for (const child of node.childNodes) visit(child);
+      if (HTML_BLOCK_ELEMENTS.has(tagName)) chunks.push("\n\n");
+      return;
+    }
+
+    if ("childNodes" in node) {
+      for (const child of node.childNodes) visit(child);
+    }
+  };
+
+  visit(fragment);
+  return chunks.join("");
 }
 
 function collectTextMessages(source: string, html: boolean): ExtractedMessage[] {
-  const plain = decodeEntities(html
-    ? source
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
-      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
-      .replace(/<\/(?:p|div|li|article|section|h\d)>/gi, "\n\n")
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<[^>]+>/g, " ")
-    : source);
+  const plain = html ? htmlToPlainText(source) : source;
   const blocks = plain
     .split(/\n\s*\n|\r?\n(?=(?:You|User|Human|Prompt|Assistant|Claude|ChatGPT|Gemini)\s*:)/i)
     .map((block) => block.replace(/\s+/g, " ").trim())
